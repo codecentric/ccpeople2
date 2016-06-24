@@ -45,7 +45,7 @@
   (let [node-width 350]
     (fn [request]
       (if (= :get (:request-method request))
-        (if-let [var-name (some-viz-graph-route (request-path request) "/dev2")]
+        (if-let [var-name (some-viz-graph-route (request-path request) "/graphs")]
           (if-let [graph (resolve-graph var-name)]
             (-> (dev-html (graphviz/as-svg-str graph node-width)
                           (graphviz/graph-description graph node-width))
