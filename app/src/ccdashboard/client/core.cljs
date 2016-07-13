@@ -15,7 +15,7 @@
 
 (def routes ["" {"profile/"  {[:consultant ""] :profile}
                  "people"    :people
-                 "locations" :locations}])
+                 "global"    :locations}])
 
 (defmulti handlers :handler :default :profile)
 
@@ -85,9 +85,9 @@
           [:li.menuitem [:a {:href (str "/#profile/" (get-in @domain/app-state [:consultant :consultant/selected]))
                              :on-click toggle-for-show-menu}
                          "Home"]]
-          [:li.menuitem [:a {:href "/#locations"
+          [:li.menuitem [:a {:href "/#global"
                             :on-click toggle-for-show-menu}
-                         "Locations"]]
+                         "Global"]]
           [:li.menuitem [:a {:href "/login"
                              :on-click toggle-for-show-menu}
                          [:i.icon-off.medium-icon]]]]])]
