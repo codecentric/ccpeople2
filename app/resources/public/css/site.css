@@ -159,12 +159,12 @@ i {
      font-size: 1.3em;
  }
 
- #teamstats svg {
+ #globalstats svg {
      height: calc(50vh - 25px);
  }
 
  @media screen and (max-width : 992px) {
-     #teamstats svg {
+     #globalstats svg {
          height: calc(100vh - 50px);
      }
  }

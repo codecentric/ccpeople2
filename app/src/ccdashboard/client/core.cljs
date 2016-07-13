@@ -7,7 +7,7 @@
     [goog.events :as events]
     cljsjs.react
     [goog.history.EventType :as EventType]
-    [ccdashboard.client.locations :as locations]
+    [ccdashboard.client.global-stats :as global]
     [ccdashboard.client.user-stats :as user-stats])
   (:import [goog.history Html5History EventType]))
 
@@ -15,11 +15,17 @@
 
 (def routes ["" {"profile/"  {[:consultant ""] :profile}
                  "people"    :people
-                 "global"    :locations}])
+                 "locations" :location
+                 "global"    :global}])
 
 (defmulti handlers :handler :default :profile)
 
-(defmethod handlers :locations [] locations/location-page)
+(defmethod handlers :location [] (fn []
+                                   [:div
+                                    [:p "Detailed View for each Location"]
+                                    [:h3 "Coming Soon..." ]]))
+
+(defmethod handlers :global [] global/global-page)
 
 (defmethod handlers :profile [params]
   (let [{{consultant :consultant} :route-params} params]
@@ -85,6 +91,9 @@
           [:li.menuitem [:a {:href (str "/#profile/" (get-in @domain/app-state [:consultant :consultant/selected]))
                              :on-click toggle-for-show-menu}
                          "Home"]]
+          [:li.menuitem [:a {:href "/#locations"
+                             :on-click toggle-for-show-menu}
+                         "Locations"]]
           [:li.menuitem [:a {:href "/#global"
                             :on-click toggle-for-show-menu}
                          "Global"]]
