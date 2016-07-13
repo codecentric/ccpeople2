@@ -13,12 +13,12 @@
 
 (enable-console-print!)
 
-(def routes ["" {"profile/"  {[:consultant ""] :profile}
+(def routes ["" {"person/"  {[:consultant ""] :person}
                  "people"    :people
                  "locations" :location
                  "global"    :global}])
 
-(defmulti handlers :handler :default :profile)
+(defmulti handlers :handler :default :person)
 
 (defmethod handlers :location [] (fn []
                                    [:div
@@ -27,13 +27,13 @@
 
 (defmethod handlers :global [] global/global-page)
 
-(defmethod handlers :profile [params]
+(defmethod handlers :person [params]
   (let [{{consultant :consultant} :route-params} params]
     (cond (nil? consultant)
           (domain/change-selected-consultant (:user/identity @domain/app-state))
           (not= consultant (get-in @domain/app-state [:consultant :consultant/selected]))
           (domain/change-selected-consultant consultant)))
-  user-stats/profile-page)
+  user-stats/person-page)
 
 (defn update-page-to-token [token]
   (swap! domain/app-state assoc :page (bidi/match-route routes token)))
@@ -88,9 +88,9 @@
       (if user-signed-in
         [:span#menu
          [:ul
-          [:li.menuitem [:a {:href (str "/#profile/" (get-in @domain/app-state [:consultant :consultant/selected]))
+          [:li.menuitem [:a {:href (str "/#person/" (get-in @domain/app-state [:consultant :consultant/selected]))
                              :on-click toggle-for-show-menu}
-                         "Home"]]
+                         "Person"]]
           [:li.menuitem [:a {:href "/#locations"
                              :on-click toggle-for-show-menu}
                          "Locations"]]
