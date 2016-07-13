@@ -82,7 +82,7 @@
       (if user-signed-in
         [:span#menu
          [:ul
-          [:li.menuitem [:a {:href "/#"
+          [:li.menuitem [:a {:href (str "/#profile/" (get-in @domain/app-state [:consultant :consultant/selected]))
                              :on-click toggle-for-show-menu}
                          "Home"]]
           [:li.menuitem [:a {:href "/#locations"
