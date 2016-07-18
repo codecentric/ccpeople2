@@ -3,7 +3,7 @@
             [ccdashboard.client.dataviz :as dataviz]
             [clojure.set :as set]
             [ccdashboard.domain.core :as domain]
-            [ccdashboard.analytics.mixpanel :as mixpanel] ))
+            [ccdashboard.analytics.mixpanel :as mixpanel]))
 
 (defn global-stats [state-atom component-name]
   [:div {:style {:margin-left  "auto"
@@ -14,18 +14,18 @@
 (defn global-stats-did-mount [state-atom component-name]
   (let [state @state-atom
         stats (:team/stats state)
-        team-hours-stats (map (fn [team]
+        global-hour-stats (map (fn [team]
                                 (update team :value (partial * (/ 8))))
                               (set/rename stats {:team/billable-hours :value}))
-        team-member-count (set/rename stats {:team/member-count :value})]
-    (dataviz/team-stats-multibarchart component-name
+        global-member-count (set/rename stats {:team/member-count :value})]
+    (dataviz/global-stats-multibarchart component-name
                                       (get-in state [:viewport/size :width])
                                       [{:key    "Billable Work Days"
                                         :color  "#A5E2ED"
-                                        :values (sort-by :name team-hours-stats)}
+                                        :values (sort-by :name global-hour-stats)}
                                        {:key    "Members"
                                         :color  "#F1DB4B"
-                                        :values (sort-by :name team-member-count)}])))
+                                        :values (sort-by :name global-member-count)}])))
 
 (defn global-component [state-atom component-name]
   (if (nil? (:team/stats @state-atom))
