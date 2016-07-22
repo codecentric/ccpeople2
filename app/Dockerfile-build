@@ -1,7 +1,7 @@
-FROM clojure:lein-2.6.1
+FROM adzerk/boot-clj
 
 VOLUME /root/.m2
 VOLUME /usr/src/app
 WORKDIR /usr/src/app
 
-CMD ["lein", "uberjar"]
+CMD ["boot", "build"]

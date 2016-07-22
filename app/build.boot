@@ -1,15 +1,16 @@
-(set-env! :dependencies '[[org.clojure/tools.nrepl   "0.2.12" :scope "test"]
+(set-env! :project 'app
+          :version "0.1.0"
+          :dependencies '[[org.clojure/tools.nrepl   "0.2.12" :scope "test"]
                           [adzerk/boot-cljs          "1.7.228-1" :scope "test"]
                           [adzerk/boot-cljs-repl     "0.3.0" :scope "test"]
                           [adzerk/boot-reload        "0.4.8" :scope "test"]
-                          [pandeiro/boot-http        "0.3.0" :scope "test"]
                           [com.cemerick/piggieback   "0.2.1" :scope "test"]
                           [weasel                    "0.7.0" :scope "test"]
 
                           [org.clojure/clojure "1.8.0"]
                           [org.clojure/clojurescript "1.7.228"]
                           [org.clojure/test.check "0.9.0"]
-                                        ; [datascript "0.13.3"]
+                          ;[datascript "0.13.3"]
                           [aleph "0.4.1-beta2"]
                           [com.cognitect/transit-cljs "0.8.237"]
                           [com.cognitect/transit-clj "0.8.285"]
@@ -55,17 +56,36 @@
                                                                 :username (System/getenv "CCARTUSER")
                                                                 :password (System/getenv "CCARTPASS")}])
           :source-paths #{"src"}
-          :resource-paths #{"resources/public"})
+          :resource-paths #{"resources/public"}
+          )
 
 (require '[adzerk.boot-cljs      :refer [cljs]]
          '[adzerk.boot-cljs-repl :refer [cljs-repl]]
          '[adzerk.boot-reload    :refer [reload]])
 
-(deftask dev []
+(task-options! cljs {:source-map true}
+               pom {:project (get-env :project)
+                    :version (get-env :version)})
+
+(deftask client []
+  "Compiles the Client for dev"
   (comp
    (watch)
-   (reload :on-jsload 'ccdashboard.client.core/on-js-reload
-           :secure true)
+   (reload :on-jsload 'ccdashboard.client.core/on-js-reload)
    (cljs-repl)
-   (cljs :source-map true)
-   (target :dir #{"target"})))
+   (cljs)
+   (sift :move {#"^main.js$" "js/main.js"})
+   (target :dir #{"public"})))
+
+(deftask build []
+  (comp (aot :all true)
+        (pom)
+        (uber)
+        (jar :main 'ccdashboard.main
+             :file "ccdashboard.jar")
+        (sift :include #{#"^ccdashboard.jar$"})
+        (target :dir #{"target"})))
+
+(deftask ship []
+  (comp (cljs :optimizations :advanced)
+        (build)))
