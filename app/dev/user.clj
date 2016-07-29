@@ -9,7 +9,6 @@
             [meta-merge.core :refer [meta-merge]]
             [com.stuartsierra.component :as component]
             [ring.middleware.stacktrace :refer [wrap-stacktrace]]
-            [eftest.runner :as eftest]
             [ccdashboard.config :as config]
             [ccdashboard.system :as system]
             [bidi.bidi :as bidi]
@@ -48,9 +47,6 @@
   (assoc-in config [:datomic :connect-url] "datomic:mem://ccpeople123"))
 
 (ns-unmap *ns* 'test)
-
-(defn test []
-  (eftest/run-tests (eftest/find-tests "test") {:multithread? false}))
 
 (defn reset []
   (reload/reset))

@@ -4,7 +4,7 @@
   :license {:name "Eclipse Public License"
             :url  "http://www.eclipse.org/legal/epl-v10.html"}
 
-  :dependencies [[org.clojure/clojure "1.8.0"]
+  :dependencies [[org.clojure/clojure "1.9.0-alpha10"]
                  [org.clojure/test.check "0.9.0"]
 ;                 [datascript "0.13.3"]
                  [aleph "0.4.1-beta2"]
@@ -13,13 +13,14 @@
                  [environ "1.0.1"]
                  [org.clojure/tools.namespace "0.2.11"]
                  [org.apache.httpcomponents/httpclient "4.5.1"]
+                 [org.clojure/tools.reader "1.0.0-beta3"]
                  [duct "0.4.2"]
                  [enlive "1.1.6"]
                  [meta-merge "0.1.1"]
                  [ring-middleware-format "0.7.0"]
-                 [org.clojure/clojurescript "1.7.228"]
+                 [org.clojure/clojurescript "1.9.89"]
                  [cljs-ajax "0.5.3"]
-                 [prismatic/schema "1.0.5"]
+                 [prismatic/schema "1.1.2"]
                  [prismatic/plumbing "0.5.2"]
                  [com.stuartsierra/component "0.3.1"]
                  [io.rkn/conformity "0.3.5"]
@@ -29,7 +30,7 @@
                                joda-time org.slf4j/slf4j-log4j12
                                org.slf4j/slf4j-api]]
                  [ch.qos.logback/logback-classic "1.1.3"]
-                 [org.clojure/core.async "0.2.374"]
+                 [org.clojure/core.async "0.2.385"]
                  [bidi "1.25.0"]
                  [ring/ring-core "1.4.0"]
                  [ring/ring-devel "1.4.0"]
@@ -44,34 +45,36 @@
                  [buddy/buddy-auth "0.9.0"]
                  [cljsjs/d3 "3.5.7-1"]
                  [cljsjs/nvd3 "1.8.2-1"]
+
                  [cljsjs/react-select "1.0.0-beta13-0"]]
 
   :profiles
-  {:dev           {:source-paths ["dev"]
-                   :repl-options {:init-ns user
-                                  ;                                      :nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]
-                                  }
-                   :dependencies [[alembic "0.3.2"]
-                                  [figwheel-sidecar "0.5.0-6"]
-                                  [devcards "0.2.1-5"]
-                                  [reloaded.repl "0.2.1"]
-                                  [eftest "0.1.0"]
-                                  [kerodon "0.7.0"]
-                                  [figwheel "0.5.0-6"]]
-                   :plugins      [[lein-cljsbuild "1.1.1"]]
-                   :jvm-opts     ^:replace ["-Dfile.encoding=UTF-8" "-Xmx1G" "-Xms512m" ;"-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005"
-                                            ]}
-   :test          {}
-   :uberjar       {:aot          :all
-                   :uberjar-name "ccdashboard.jar"
-                   :prep-tasks [["clean"] ["cljsbuild" "once" "min"] ["compile"]]
-                   :omit-source  true}
-   :repl          {:resource-paths ^:replace ["resources" "target/figwheel"]
-                   :prep-tasks     ^:replace [["compile"]]} }
+  {:dev     {:source-paths ["dev"]
+             :repl-options {:init-ns user
+                            ;                                      :nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]
+                            }
+             :dependencies [[alembic "0.3.2"]
+                            [figwheel-sidecar "0.5.4-7"]
+                            [devcards "0.2.1-5"]
+                            [reloaded.repl "0.2.1"]
+                            ;                            [eftest "0.1.0"]
+                            [kerodon "0.7.0"]
+                            ;[figwheel "0.5.4-7"]
+                            ]
+             :plugins      [[lein-cljsbuild "1.1.1"]]
+             :jvm-opts     ^:replace ["-Dfile.encoding=UTF-8" "-Xmx1G" "-Xms512m" ;"-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005"
+                                      ]}
+   :test    {}
+   :uberjar {:aot          :all
+             :uberjar-name "ccdashboard.jar"
+             :prep-tasks   [["clean"] ["cljsbuild" "once" "min"] ["compile"]]
+             :omit-source  true}
+   :repl    {:resource-paths ^:replace ["resources" "target/figwheel"]
+             :prep-tasks     ^:replace [["compile"]]}}
 
   :main ccdashboard.main
 
-  :source-paths ["src"]
+  :source-paths ["src" "script"]
   :test-paths ["test"]
   :resource-paths ["resources" "target/cljsbuild"]
   :jvm-opts ^:replace ["-Dfile.encoding=UTF-8"]
