@@ -616,7 +616,7 @@
 
 (def ^:const stats-orientation-switch-threshold 992)
 
-(defn team-stats-multibarchart [component-name viewport-width stats-to-display]
+(defn global-stats-multibarchart [component-name viewport-width stats-to-display]
   (.addGraph js/nv (fn []
                      (let [chart (if (> stats-orientation-switch-threshold
                                         viewport-width)

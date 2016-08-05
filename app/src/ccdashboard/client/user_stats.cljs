@@ -137,7 +137,7 @@
        (formatted-days-comma-separated days)])))
 
 (defn set-location-profile! [jira-username]
-  (set! (.. js/window -location) (str "#profile/" (.-value jira-username))))
+  (set! (.. js/window -location) (str "#person/" (.-value jira-username))))
 
 (defn user-stats [state]
   (let [model-data (domain/app-model {:state state})
@@ -231,7 +231,7 @@
            (when (pos? number-parental-leave-days)
              [days-rect "icon-award" "white" "#9eb25d" "Parental leave" number-parental-leave-days])]])]]]))
 
-(defn profile-page [_]
+(defn person-page [_]
   (let [state @domain/app-state]
     (cond (= (:error state) :error/unknown-user)
           (list [:h2 {:style {:color "black"}} "Sorry, but we don't know that user. "]
