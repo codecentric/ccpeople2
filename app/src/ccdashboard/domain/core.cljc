@@ -121,27 +121,6 @@
        (first)
        (:customer/id)))
 
-
-
-(defn billable-worklogs [{:keys [worklogs tickets customers]}]
-  (let [codecentric-id (customer-id-by-name "codecentric" customers)
-        non-billable-codecentric-ticket-ids (->> tickets
-                                                 (filter (every-pred (matching :ticket/customer codecentric-id)
-                                                                     (complement (matching :ticket/invoicing :invoicing/support))))
-                                                 (into #{} (map :ticket/id)))
-        billable-ticket-ids (->> tickets
-                                 (filter (fn [ticket]
-                                           (not= (:ticket/invoicing ticket)
-                                                 :invoicing/not-billable)))
-                                 (into #{} (map :ticket/id)))]
-    (->> worklogs
-         (remove (comp non-billable-codecentric-ticket-ids :worklog/ticket))
-         (filter (comp billable-ticket-ids :worklog/ticket)))))
-
-(defn hours-billed [app-state]
-  (reduce + (map :worklog/hours
-                 (billable-worklogs app-state))))
-
 (defn sum-of [k]
   (fn [vs]
     (reduce + (map k vs))))
@@ -155,41 +134,58 @@
 ;; parental leave TS-345
 (def parental-leave-ticket-id 71746)
 
-(def worktype-order [:billable :other :vacation :parental-leave :sickness])
+;; 20% time TS-7
+(def plus-one-ticket-id 68005)
+
+;; TS-6
+(def travel-ticket-id 68004)
+
+;; TS-3
+(def pre-sales-ticket-id 68001)
+
+;; TS-4
+(def recruiting-ticket-id 68002)
+
+;; TS-1
+(def admin-time-ticket-id 67998)
+
+(def special-codecentric-ticket-ids->worktype
+  {vacation-ticket-id       :vacation
+   sick-leave-ticket-id     :sickness
+   parental-leave-ticket-id :parental-leave
+   plus-one-ticket-id       :plus-one
+   travel-ticket-id :travel
+   pre-sales-ticket-id :pre-sales
+   recruiting-ticket-id :recruiting
+   admin-time-ticket-id :admin-time})
+
+(def worktype-order [:billable :plus-one :pre-sales :recruiting :admin-time :other :vacation :travel :sickness :parental-leave])
 
 (def worktype->display-name {:vacation "Holidays"
                              :parental-leave "Parental leave"
                              :sickness "Sickness"
                              :other "Other"
-                             :billable "Billable hours"})
+                             :billable "Billable hours"
+                             :plus-one "20% time"
+                             :travel "Travel"
+                             :pre-sales "Pre Sales"
+                             :recruiting "Recruiting"
+                             :admin-time "Admin time"})
 
-(defn worktype-fn [{:keys [worklogs tickets customers]}]
-  (let [codecentric-id (customer-id-by-name "codecentric" customers)
-        codecentric-ticket-ids (->> tickets
-                                    (filter (matching :ticket/customer codecentric-id))
-                                    (into #{} (map :ticket/id)))
-        billable-ticket-ids (->> tickets
-                                 (filter (fn [ticket]
-                                           (not= (:ticket/invoicing ticket)
-                                                 :invoicing/not-billable)))
-                                 (into #{} (map :ticket/id)))
-        ticket->worktype (-> (zipmap billable-ticket-ids (repeat :billable))
-                             (assoc vacation-ticket-id :vacation
-                                    sick-leave-ticket-id :sickness
-                                    parental-leave-ticket-id :parental-leave))]
-    (fn [worklog]
-      (get ticket->worktype (:worklog/ticket worklog) :other))))
+(defn worktype-fn [ticket->worktype]
+  (fn [worklog]
+    (get ticket->worktype (:worklog/ticket worklog) :other)))
 
-(defn hours-by-month [app-state]
-  (->> (:worklogs app-state)
+(defn hours-by-month [worklogs ticket->worktype]
+  (->> worklogs
        (group-by (comp time/month :worklog/work-date))
-       (map-vals (fn [worklogs]
-                   (->> worklogs
-                        (group-by (worktype-fn app-state))
+       (map-vals (fn [monthly-worklogs]
+                   (->> monthly-worklogs
+                        (group-by (worktype-fn ticket->worktype))
                         (map-vals (sum-of :worklog/hours)))))))
 
 (defn get-worktypes [monthly-hours]
-  (distinct (mapcat keys (vals monthly-hours))))
+  (sort-by #(.indexOf worktype-order %) (distinct (mapcat keys (vals monthly-hours)))))
 
 (def i->month {1 "Jan"
                2 "Feb"
@@ -208,7 +204,12 @@
                       :parental-leave "#f1db4b"
                       :sickness "#a5e2ed"
                       :other "#1FB7D4"
-                      :billable "#7FFBC6"})
+                      :billable "#7FFBC6"
+                      :plus-one "#F4A63A"
+                      :travel "#e555ed"
+                      :pre-sales "#b7ab4b"
+                      :recruiting "#F1B0D1"
+                      :admin-time "#4b4481"})
 
 (defn get-monthly-hours-by-worktype [monthly-hours worktype]
   (reduce (fn [hours-per-month month]
@@ -350,10 +351,30 @@
   (get-in state [:user :user/signed-in?]))
 
 (def app-model-graph
-  {:monthly-hours                    (fnk [state]
-                                            (hours-by-month state))
-   :worklogs-billable                     (fnk [state]
-                                            (billable-worklogs state))
+  {:customer-codecentric-id               (fnk [state]
+                                            (customer-id-by-name "codecentric" (:customers state)))
+   :non-billable-codecentric-ticket-ids   (fnk [state customer-codecentric-id]
+                                            (->> state
+                                                 (:tickets)
+                                                 (filter (every-pred (matching :ticket/customer customer-codecentric-id)
+                                                                     (complement (matching :ticket/invoicing :invoicing/support))))
+                                                 (into #{} (map :ticket/id))))
+   :billable-ticket-ids                   (fnk [state non-billable-codecentric-ticket-ids]
+                                            (->> state
+                                                 (:tickets)
+                                                 (filter (fn [ticket]
+                                                           (not= (:ticket/invoicing ticket)
+                                                                 :invoicing/not-billable)))
+                                                 (remove (comp non-billable-codecentric-ticket-ids :ticket/id))
+                                                 (into #{} (map :ticket/id))))
+   :worklogs-billable                     (fnk [state billable-ticket-ids]
+                                            (filter (comp billable-ticket-ids :worklog/ticket)
+                                                    (:worklogs state)))
+   :ticket-id->worktype                   (fnk [billable-ticket-ids]
+                                            (-> (zipmap billable-ticket-ids (repeat :billable))
+                                                (merge special-codecentric-ticket-ids->worktype)))
+   :monthly-hours                         (fnk [state ticket-id->worktype]
+                                            (hours-by-month (:worklogs state) ticket-id->worktype))
    ;; the consultant specific goal start date...
    ;; 1st of January if consultant employment did not start this year, otherwise employment start.
    :consultant-start-date                 (fnk [state]
