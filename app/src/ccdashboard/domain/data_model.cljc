@@ -162,7 +162,7 @@
 
 (s/defschema DomainWorklog {:worklog/id                           PositiveInt
                             (s/optional-key :worklog/description) s/Str
-                            ;                            :worklog/user
+                            :worklog/user                         NonEmptyString
                             :worklog/hours                        NumberHoursWorkedPerDay
                             :worklog/work-date                    LocalDate
                             :worklog/ticket                       PositiveInt

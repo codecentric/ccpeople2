@@ -16,12 +16,16 @@
     ;; to load data reader
             ccdashboard.data-readers.local-date
             [cognitect.transit :as transit]
-            [ccdashboard.log :as log])
+            [ccdashboard.log :as log]
+            [cognitect.transit :as t])
   (:import (com.stuartsierra.component Lifecycle)
            (java.io Closeable)
            (java.util.concurrent Executors TimeUnit)
            (java.lang.invoke MethodHandles)
-           (org.slf4j LoggerFactory)))
+           (org.slf4j LoggerFactory)
+           [datascript.db DB Datom]
+           (datascript.btset BTSet)
+           (org.joda.time LocalDate)))
 
 (def base-config
   {:app {:middleware     [[wrap-not-found :not-found]
@@ -35,10 +39,18 @@
                           {:transit-json
                            {:handlers
                             {org.joda.time.LocalDate
-                             (transit/write-handler "date/local"
-                                                    (fn [local-date] [(.getYear local-date)
-                                                                      (.getMonthOfYear local-date)
-                                                                      (.getDayOfMonth local-date)]))}}}}}})
+                                   (transit/write-handler "date/local"
+                                                          (fn [^LocalDate local-date] [(.getYear local-date)
+                                                                                       (.getMonthOfYear local-date)
+                                                                                       (.getDayOfMonth local-date)]))
+                             DB    (t/write-handler "datascript/DB"
+                                                    (fn [db]
+                                                      {:schema (:schema db)
+                                                       :datoms (:eavt db)}))
+                             Datom (t/write-handler "datascript/Datom"
+                                                    (fn [^Datom d]
+                                                      [(.-e d) (.-a d) (.-v d) (.-tx d)]))
+                             BTSet (get t/default-write-handlers java.util.List)}}}}}})
 
 (defrecord Webserver [app]
   Lifecycle

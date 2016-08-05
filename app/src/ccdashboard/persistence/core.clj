@@ -1,6 +1,7 @@
 (ns ccdashboard.persistence.core
   (:require [datomic.api :refer [db q] :as d]
             [io.rkn.conformity :as c]
+            [ccdashboard.domain.datscript :as datscript]
             [clojure.java.io :as io]
             [environ.core :refer [env]]
             [ccdashboard.util :refer [matching]]
@@ -45,7 +46,7 @@
         (if (and (instance? IllegalArgumentException c)
                  ))))))
 
-(defn all-users [dbval]
+(defn all-usernames [dbval]
   (->> (d/q '{:find  [(pull ?e [:user/jira-username :user/display-name])]
               :in    [$]
               :where [[?e :user/jira-username ?username]]}
@@ -89,37 +90,81 @@
 
 (defn domain-worklog [db-worklog]
   (-> db-worklog
-      (as-map)
-      ;; for now keep the user implicit
-      (dissoc :db/id :worklog/user)
+      ;(as-map)
+      (dissoc :db/id :worklog/description)
+      (update :worklog/user :user/jira-username)
       (update :worklog/ticket :ticket/id)
       (model/to-domain-worklog)))
 
 (defn domain-ticket [db-ticket]
   (-> db-ticket
-      (as-map)
+      ;(as-map)
       (dissoc :db/id)
       (update-in-when [:ticket/customer] :customer/id)
       (model/to-domain-ticket)))
 
 (defn domain-customer [db-customer]
   (-> db-customer
-      (as-map)
+      ;(as-map)
       (dissoc :db/id)
       (model/to-domain-customer)))
 
 (defn domain-user [db-user]
   (-> db-user
-      (as-map)
+      ;(as-map)
+      (dissoc :db/id)
       (update-in-when [:user/team] :team/id)
       (model/to-domain-user)))
 
+(defn all-worklogs [dbval]
+  (into []
+        (map first)
+        (d/q '{:find  [(pull ?w [* {:worklog/ticket [:ticket/id]} {:worklog/user [:user/jira-username]}])]
+               :where [[?w :worklog/id]]}
+             dbval)))
+
+(defn all-tickets [dbval]
+  (into []
+        (map (comp (fn [ticket]
+                     (-> ticket
+                         (dissoc :ticket/type)
+                         (update :ticket/invoicing (fn [ttype] (d/ident dbval (:db/id ttype))))))
+                   first))
+        (d/q '{:find  [(pull ?w [* {:ticket/customer [:customer/id]}])]
+          :where [[?w :ticket/id]]}
+        dbval)))
+
+(defn all-customers [dbval]
+  (into []
+        (map first)
+        (d/q '{:find  [(pull ?w [*])]
+               :where [[?w :customer/id]]}
+             dbval)))
+
+(defn all-users [dbval]
+  (into []
+        (map first)
+        (d/q '{:find  [(pull ?w [*])]
+               :where [[?w :user/jira-username]]}
+             dbval)))
+
+(defn all-state [dbval]
+  (let [db-worklogs (all-worklogs dbval)
+        tickets (all-tickets dbval)
+        customers (all-customers dbval)]
+    {:users     (mapv domain-user (all-users dbval))                                            ;(domain-user user-entity)
+     :worklogs  (mapv domain-worklog db-worklogs)
+     :tickets   (mapv domain-ticket tickets)
+     :customers (mapv domain-customer customers)}))
+
 (defn existing-user-data [dbval id]
-  (let [user-entity (d/entity dbval id)
-        db-worklogs (:worklog/_user user-entity)
-        tickets (into #{} (map :worklog/ticket) db-worklogs)
-        customers (into #{} (keep :ticket/customer) tickets)]
-    {:user      (domain-user user-entity)
+  (let [                                                    ;user-entity (d/entity dbval id)
+        db-worklogs (all-worklogs dbval)                    ;(:worklog/_user user-entity)
+        tickets (all-tickets dbval)                         ;(into #{} (map :worklog/ticket) db-worklogs)
+        customers (all-customers dbval)                                           ;(into #{} (keep :ticket/customer) tickets)
+        ]
+    {:db (datscript/get-state)}
+    #_{:users     (mapv domain-user (all-users dbval))                                            ;(domain-user user-entity)
      :worklogs  (mapv domain-worklog db-worklogs)
      :tickets   (mapv domain-ticket tickets)
      :customers (mapv domain-customer customers)}))
@@ -158,7 +203,7 @@
                        :schema-name (:schema-name options)}))
 
 (defn with-all-users [dbval m]
-  (assoc m :users/all (all-users dbval)))
+  (assoc m :users/all (all-usernames dbval)))
 
 (defn add-identity [user-data]
   (assoc user-data :user/identity (get-in user-data [:user :user/jira-username])))

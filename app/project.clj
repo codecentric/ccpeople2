@@ -6,7 +6,8 @@
 
   :dependencies [[org.clojure/clojure "1.9.0-alpha10"]
                  [org.clojure/test.check "0.9.0"]
-;                 [datascript "0.13.3"]
+                 [datascript "0.15.2"]
+                 [datascript-transit "0.2.1"]
                  [aleph "0.4.1-beta2"]
                  [com.cognitect/transit-cljs "0.8.237"]
                  [com.cognitect/transit-clj "0.8.285"]
@@ -57,6 +58,7 @@
                             [figwheel-sidecar "0.5.4-7"]
                             [devcards "0.2.1-5"]
                             [reloaded.repl "0.2.1"]
+                            [tubular "1.1.1"]
                             ;                            [eftest "0.1.0"]
                             [kerodon "0.7.0"]
                             ;[figwheel "0.5.4-7"]

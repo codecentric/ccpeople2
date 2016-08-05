@@ -6,6 +6,8 @@
             [ccdashboard.analytics.mixpanel :as mixpanel]
             [ccdashboard.util :refer [matching]]
             [ccdashboard.graph :as graph]
+            [cognitect.transit :as t]
+            [datascript.db   :as db]
     #?@(:cljs [[reagent.core :refer [atom]]
                [goog.array :as garray]
                [cljs-time.core :as time]
@@ -34,14 +36,14 @@
 
 (defonce app-state (atom initial-state))
 
-(defn error-handler-fn [{:keys [status status-text]}]
+(defn error-handler-fn [{:keys [status status-text] :as err}]
   (reset! app-state
           (cond->
             (assoc-in initial-state [:user :user/signed-in?] false)
             (not= 401 status)
             (assoc :error :error/unexpected-api-response)))
   (mixpanel/track "hit")
-  (println (str "api response: " status " " status-text)))
+  (println (str "api response: " status " " status-text " err: " err)))
 
 (defn change-selected-consultant [consultant]
   (swap! app-state
@@ -54,12 +56,14 @@
   (mixpanel/track "signin"))
 
 (defn handle-initial-api-response [data]
-  (let [selected-username (get-in data [:user :user/jira-username])]
+  (let [selected-username (get-in data [:user :user/jira-username])
+        server-state (-> data
+                  (assoc-in [:user :user/signed-in?] true)
+                  (assoc-in [:consultant :consultant/selected] selected-username))]
     (swap! app-state
            merge
-           (-> data
-               (assoc-in [:user :user/signed-in?] true)
-               (assoc-in [:consultant :consultant/selected] selected-username)))
+           server-state)
+
     (track-user selected-username)))
 
 (defn handle-consultant-api-response [data]
@@ -86,7 +90,9 @@
                       :reader          (transit/reader :json
                                                        {:handlers
                                                         {"date/local" (fn [date-fields]
-                                                                        (apply time/local-date date-fields))}})})
+                                                                        (apply time/local-date date-fields))
+                                                         "datascript/DB"    (t/read-handler db/db-from-reader)
+                                                         "datascript/Datom" (t/read-handler db/datom-from-reader)}})})
               params
               (assoc :params params))))
 
