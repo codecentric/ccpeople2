@@ -28,7 +28,8 @@
                  [com.datomic/datomic-pro "0.9.5344"
                   :exclusions [org.slf4j/slf4j-nop
                                joda-time org.slf4j/slf4j-log4j12
-                               org.slf4j/slf4j-api]]
+                               org.slf4j/slf4j-api
+                               com.google.guava/guava]]
                  [ch.qos.logback/logback-classic "1.1.3"]
                  [org.clojure/core.async "0.2.385"]
                  [bidi "1.25.0"]
