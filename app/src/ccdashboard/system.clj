@@ -11,6 +11,7 @@
             [ccdashboard.persistence.core :as storage]
             [ccdashboard.ticket-import.core :as worklog]
             [ccdashboard.assets :refer [wrap-assets]]
+            [graphviz.html :refer [wrap-viz-graph]]
             [ring.middleware.format :as ring-format]
             [ring.middleware.stacktrace :as stacktrace]
     ;; to load data reader
@@ -27,6 +28,7 @@
   {:app {:middleware     [[wrap-not-found :not-found]
                           [ring-format/wrap-restful-format :transit-custom]
                           [wrap-assets]
+                          [wrap-viz-graph]
                           [wrap-defaults :defaults]
                           [stacktrace/wrap-stacktrace-log]]
          :not-found      (io/resource "errors/404.html")

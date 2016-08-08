@@ -42,6 +42,7 @@
                  [cljsjs/react "0.14.3-0"]
                  [com.andrewmcveigh/cljs-time "0.4.0"]
                  [net.oauth.core/oauth "20090617"]
+                 [lacij "0.9.1"]
                  [net.oauth.core/oauth-httpclient4 "20090617"]
                  [buddy/buddy-auth "0.9.0"]
                  [cljsjs/d3 "3.5.7-1"]
@@ -68,8 +69,9 @@
    :test    {}
    :uberjar {:aot          :all
              :uberjar-name "ccdashboard.jar"
-             :prep-tasks   [["clean"] ["cljsbuild" "once" "min"] ["compile"]]
-             :omit-source  true}
+             :prep-tasks   [["clean"] ["cljsbuild" "once" "min"] ["cljsbuild" "once" "vizgraph"] ["compile"]]
+             :omit-source  false
+             }
    :repl    {:resource-paths ^:replace ["resources" "target/figwheel"]
              :prep-tasks     ^:replace [["compile"]]}}
 
@@ -81,14 +83,15 @@
   :jvm-opts ^:replace ["-Dfile.encoding=UTF-8"]
   :clean-targets ^{:protect false} ["resources/public/js/compiled" "target"]
 
-  :cljsbuild {:builds [{:id           "dev"
-                        :source-paths ["src" "dev"]
-                        :figwheel     {:on-jsload "ccdashboard.client/on-js-reload"}
+  :cljsbuild {:builds [{:id           "vizgraph"
+                        :source-paths ["graphviz-src"]
+                        ;                        :figwheel     {:on-jsload "app.client/on-js-reload"}
 
-                        :compiler     {:main                 ccdashboard.client
+                        :compiler     {:main                 graphviz.interact
                                        :asset-path           "js/compiled/out"
-                                       :output-to            "resources/public/js/compiled/ccdashboard.js"
+                                       :output-to            "resources/public/js/compiled/graphviz-interact.js"
                                        :output-dir           "resources/public/js/compiled/out"
+                                       :optimizations :advanced
                                        :source-map-timestamp true}}
                        {:id           "min"
                         :source-paths ["src"]

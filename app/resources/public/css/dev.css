@@ -1,0 +1,43 @@
+code {
+white-space: pre-wrap;
+}
+
+pre {
+margin: 0px;
+}
+
+.nowrap {
+    white-space: nowrap;
+}
+
+.input-param {
+  color: #5882FA;
+}
+
+.selected-node.gnode rect {
+  stroke: red;
+}
+
+.gnode rect {
+  stroke: black;
+}
+
+.node-code {
+  border: 1px solid black;
+}
+
+.selected-node .node-code {
+  border-color: red;
+}
+
+.highlighted-node {
+  z-index: 2;
+  opacity: 1;
+}
+
+.background {
+  color: grey;
+  opacity: 0.2;
+
+  z-index: 1;
+}
