@@ -47,7 +47,12 @@
                                                     :issue_id cc-plus-one-id
                                                     :hours 7.
                                                     :work_date (time-coerce/to-date (time/date-time 2016 1 20))
-                                                    :worklog_id 3)]
+                                                    :worklog_id 3)
+                                                  (assoc bob-bau-base-worklog
+                                                    :issue_id 154
+                                                    :hours 7.
+                                                    :work_date (time-coerce/to-date (time/date-time 2016 1 21))
+                                                    :worklog_id 4)]
                                                  (mapv (complete-non-nil model/JiraWorkLog)))
                        :prefetched-issues   (->> [{:id     bau-issue-id
                                                    :fields {:components        [{:id   100
@@ -57,7 +62,12 @@
                                                   {:id     cc-plus-one-id
                                                    :fields {:components [{:id   99
                                                                           :name "codecentric"}]
-                                                            :issuetype  {:name "Administrative Time"}}}]
+                                                            :issuetype  {:name "Administrative Time"}}}
+                                                  {:id     154
+                                                   :fields {:components [{:id   99
+                                                                          :name "codecentric"}]
+                                                            :customfield_12300 {:value "Support"}
+                                                            :issuetype  {:name "Quote"}}}]
                                                  (mapv (complete-non-nil model/JiraIssue)))
                        :prefetched-users    (->> [{:name         bob-baumeister
                                                    :emailAddress bob-email}]
@@ -75,16 +85,24 @@
                                   {:worklog/id        3
                                    :worklog/hours     7.
                                    :worklog/work-date (time/local-date 2016 1 20)
-                                   :worklog/ticket    cc-plus-one-id}}}
+                                   :worklog/ticket    cc-plus-one-id}
+                                  {:worklog/id        4
+                                   :worklog/hours     7.
+                                   :worklog/work-date (time/local-date 2016 1 21)
+                                   :worklog/ticket    154}}}
                      {:entity-key :tickets
                       :id-key :ticket/id
                       :expected #{{:ticket/id        bau-issue-id
                                    :ticket/customer  100,
                                    :ticket/invoicing :invoicing/time-monthly,
                                    :ticket/type      :ticket.type/quote}
-                                  {:ticket/id       cc-plus-one-id
-                                   :ticket/customer 99,
-                                   :ticket/type     :ticket.type/admin}}}
+                                  {:ticket/id        cc-plus-one-id
+                                   :ticket/customer  99,
+                                   :ticket/type      :ticket.type/admin}
+                                  {:ticket/id        154
+                                   :ticket/customer  99
+                                   :ticket/invoicing :invoicing/support
+                                   :ticket/type      :ticket.type/quote}}}
                      {:entity-key :customers
                       :id-key :customer/id
                       :expected #{{:customer/id 100, :customer/name "BAU"}
@@ -300,5 +318,10 @@
 (deftest should-calculate-the-period-start-right
   (is (= #date/local[2016 3 1] (:current-period-start (jira-import-date-graph {:today #date/local [2016 4 1]}))))
   (is (= #date/local[2016 4 1] (:current-period-start (jira-import-date-graph {:today #date/local [2016 4 6]})))))
+
+(deftest should-be-able-to-import-shit-users
+  (with-redefs [ccdashboard.ticket-import.core/fetch-users (fn [& _] [{:name "Hans" :emailAddress "Hans_Meier" :displayName "Hans Meier"}])]
+    (fetch-all-jira-users "" "" ""))
+  )
 
 

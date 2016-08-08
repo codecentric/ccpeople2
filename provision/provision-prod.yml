@@ -1,0 +1,26 @@
+---
+- hosts: ccp
+  gather_facts: no
+  vars:
+    user: "ubuntu"
+  tasks:
+    # todo add docker & docker-compose installation.
+    - name: create bin folder
+      file: path="/home/{{user}}/bin" state=directory
+    - name: create data folder
+      file: path="/home/{{user}}/data" state=directory
+    - name: create postgres data folder
+      file: path="/home/{{user}}/data/postgres" state=directory
+    - name: create datomic data folder
+      file: path="/home/{{user}}/data/datomic" state=directory
+
+    - name: setup environment variables
+      template: src=env.sh.template dest="/home/{{user}}/.env"
+    - name: add env to bashrc
+      lineinfile: dest="/home/{{user}}/.bashrc" line="source /home/{{user}}/.env"
+    - name: add docker-compose up alias
+      lineinfile: dest="/home/{{user}}/.bashrc" regexp="^alias u=" line="alias u='sudo -E docker-compose up'"
+    - name: add docker-compose build alias
+      lineinfile: dest="/home/{{user}}/.bashrc" regexp="^alias b=" line="alias b='sudo -E docker-compose build'"
+    - name: copy prod compose file
+      copy: src="docker-compose-production.yml" dest="/home/{{user}}/docker-compose.yml"

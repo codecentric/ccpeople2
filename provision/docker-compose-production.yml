@@ -1,0 +1,32 @@
+version: "2"
+services:
+  postgres:
+    image: dockerhub.codecentric.de/ccdashboard-postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - "/home/ubuntu/data/postgres:/var/lib/postgresql/data"
+    environment:
+      - POSTGRES_PASSWORD
+    restart: always
+  datomicdb:
+    image: dockerhub.codecentric.de/ccdashboard-datomic
+    ports:
+      - "4334:4334"
+    volumes:
+      - "/home/ubuntu/data/datomic:/data"
+    restart: always
+  app:
+    image: dockerhub.codecentric.de/ccdashboard-app
+    ports:
+      - "35001:35001"
+      - "8000:8000"
+    environment:
+      - DATOMIC_CONNECT_URL=datomic:sql://people?jdbc:postgresql://postgres:5432/datomic?user=datomic&password=${DATOMIC_POSTGRES_PASSWORD}
+      - JIRA_BASE_URL
+      - JIRA_TEMPO
+      - JIRA_ACCESS_TOKEN
+      - JIRA_CONSUMER_PRIVATE_KEY
+      - JWS_TOKEN_SECRET
+      - APP_HOSTNAME
+    restart: always

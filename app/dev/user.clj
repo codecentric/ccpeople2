@@ -2,7 +2,7 @@
   (:require [alembic.still :refer [load-project]]
             [clojure.repl :refer :all]
             [clojure.pprint :refer [pprint]]
-            [datomic.api :as d]
+            [datomic.api :refer [db q] :as d]
             [clojure.tools.namespace.repl :refer [refresh]]
             [clojure.java.io :as io]
             [reloaded.repl :refer [init start stop] :as reload]
@@ -10,7 +10,6 @@
             [com.stuartsierra.component :as component]
             [ring.middleware.stacktrace :refer [wrap-stacktrace]]
             [graphviz.html :refer [wrap-viz-graph]]
-            [eftest.runner :as eftest]
             [ccdashboard.config :as config]
             [ccdashboard.system :as system]
             [bidi.bidi :as bidi]
@@ -50,9 +49,6 @@
   (assoc-in config [:datomic :connect-url] "datomic:mem://ccpeople123"))
 
 (ns-unmap *ns* 'test)
-
-(defn test []
-  (eftest/run-tests (eftest/find-tests "test") {:multithread? false}))
 
 (defn reset []
   (reload/reset))

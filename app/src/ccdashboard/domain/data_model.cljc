@@ -3,15 +3,15 @@
             [schema.coerce :as coerce]
             [schema.utils :as s-util]
             [plumbing.core :refer [safe-get]]
-    #?@(:clj  [
+            [clojure.set :as set]
+            [clojure.string :as str]
+            #?@(:clj  [
             [clj-time.core :as time]
             [clj-time.format :as format]
             [clj-time.coerce :as time-coerce]]
         :cljs [[cljs-time.core :as time]
                [cljs-time.format :as format]
-               [cljs-time.coerce :as time-coerce]])
-            [clojure.set :as set])
-  )
+               [cljs-time.coerce :as time-coerce]])))
 
 (def IDate "Cross-platform Date" #?(:clj java.util.Date
                                     :cljs js/Date))
@@ -134,6 +134,9 @@
    :emailAddress EmailAddress
    :displayName NonEmptyString
    s/Keyword s/Any})
+
+
+
 
 (s/defschema JiraCustomer "Actually a Jira component, but represents as a customer."
   {:id   PositiveInt

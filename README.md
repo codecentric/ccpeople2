@@ -14,7 +14,7 @@ This part has to be done only once.
 
 - Clone this repo.
 - Copy `provision/private_vars/env.yml.sample` to `provision/private_vars/env.yml` and fill out the placeholders:
-    * `JIRA_TEMPO`, `JIRA_BASE_URL` and `JIRA_CONSUMER_PRIVATE_KEY` can be provided by your colleagues
+    * `JIRA_TEMPO`, `JIRA_BASE_URL` and `JIRA_CONSUMER_PRIVATE_KEY` can be provided by your colleagues. Make sure that there is no trailing `/` on the `JIRA_BASE_URL`.
     * `DATOMIC_USER` and `DATOMIC_PASSWORD`: Create an account at [Datomic](https://my.datomic.com/account/create) and copy `username` and `password` from [Datomic account page](https://my.datomic.com/account)
     * `DATOMIC_POSTGRES_PASSWORD`, `APP_HOSTNAME`, `JWS_TOKEN_SECRET`: you can leave them as they are.
     * `DATOMIC_LICENSE_KEY`: the license key received after Datomic registration
@@ -27,11 +27,11 @@ To access Jira data, the dashboard-server uses OAuth. Jira access tokens are bou
 
 Requirement: your user needs to be in the `jira-developers` group to be able to perform all required queries. Check with your Jira admin.
 
-- Start the VM: `vagrant up`, start the server: `docker-compose up` or `u`, connect your IDE to the server: for Cursive use the `vagrant REPL` run-configuration.
+- Start the VM: `vagrant up`. Log into the VM: `vagrant ssh`. Then start the server within the VM: `docker-compose up` or `u`, connect your IDE to the server: for Cursive use the `Vagrant REPL` run-configuration. If the run configurations cannot be found, check your GIT log in app/.idea/runConfigurations and restore the deleted xml files.
 - In the REPL switch to the `ccdashboard.oauth.core` namespace: `(ns ccdashboard.oauth.core)`.
-- Invoke the `request-token` function and store the result: `(def rt (request-token))`
+- Invoke the `request-token` function and store the result: `(def rt (request-token))` then call `rt`.
 - The function returns a map containing an `:authorize-url` key. Copy that URL and open it in the browser. You will be prompted to log-in. After logging-in the browser displays a verifier string. Copy that string.
-- Invoke the `access-token` function using the request-token and verifier string: `(access-token rt <paste copied verifier string here>)`.
+- Invoke the `access-token` function using the request-token and verifier string: `(access-token rt "<paste copied verifier string here>")`.
 - The function returns the Jira access token which you should paste into `provision/private_vars/env.yml`.
 - Important: run `vagrant provision` afterwards to make sure the VM picks up the access token.
 

@@ -1,5 +1,9 @@
 (ns ccdashboard.client.dataviz
-  (:require [cljs.pprint :as pprint]))
+  (:require [cljs.pprint :as pprint]
+            [ccdashboard.domain.core :as domain]
+            cljsjs.d3
+            cljsjs.nvd3
+            [reagent.core :as reagent]))
 
 (enable-console-print!)
 
@@ -52,6 +56,88 @@
       (.style "text-anchor" "middle")
       (.text label-text)))
 
+(defn billable[hours-by-month]
+  (get (js->clj hours-by-month) "billable")
+  )
+
+(defn create-monthly-bar-view [component-name width height billed-hours-by-month]
+
+  (let [x-padding (* width 0.26)
+        x-line-padding (* width 0.21)
+        balance-width (- width (* 2 10))
+        label-color "black"
+        dataset (clj->js '(100 200 300))
+        balance-line-color "#e9e8e8"
+        svg (-> js/d3
+                (.select (str "#" component-name " svg"))
+                (.attr "width" width)
+                (.attr "height" height)
+                (.attr "viewBox" (str "0 0 " width " " height))
+                (.attr "preserveAspectRatio" "xMidYMid meet")
+               )]
+
+    (-> svg
+        (.append "rect")
+        (.attr "x" x-padding)
+        (.attr "width" 550)
+        (.attr "y" 0)
+        (.attr "height" height)
+        (.style "fill" "#f3f3f3")
+        )
+
+    (-> svg
+        (.selectAll "rect.month")
+        (.data billed-hours-by-month)
+        (.enter)
+        (.append "rect")
+        (.attr "x" (fn [d,i] (+ (* i 40) 350)))
+        (.attr "y" (fn [d] (- height (billable d))))
+        (.attr "width" 38)
+        (.attr "height" (fn [d] (billable d)))
+        (.style "fill" (fn [d] (str "rgb(0,0," (int (Math/ceil (billable d))) ")")))
+        )
+
+    (-> svg (.selectAll "text")
+        (.data billed-hours-by-month)
+        (.enter)
+        (.append "text")
+        (.text (fn [d] (int (Math/ceil (billable d)))))
+        (.attr "x" (fn [d,i] (+ 355 (* (if (> (billable d) 99) 40 41) i))))
+        (.attr "y" (fn [d] (+ (if (> (billable d) 70) 50 (if(> (billable d) 20) 20 10) ) (- height (billable d)))))
+        (.style "fill" "#ffffff"))))
+
+; .transitionDuration(350)
+;.reduceXTicks(true)   //If 'false', every single x-axis tick label will be rendered.
+;.rotateLabels(0)      //Angle to rotate x-axis labels.
+;.showControls(true)   //Allow user to switch between 'Grouped' and 'Stacked' mode.
+;.groupSpacing(0.1)
+
+(defn create-stacked-bar-view [component-name component monthly-hours]
+  (.addGraph js/nv (fn []
+                     (let [chart (.. js/nv -models multiBarChart)]
+                       (.. chart
+                           (duration 350)
+                           (x first)
+                           (y second)
+                           (showControls false)
+                           (showLegend true)
+                           (reduceXTicks false)
+                           (stacked true)
+                           (groupSpacing 0.3))
+
+                       (.. js/d3 (select (str "#" component-name " svg"))
+                           (datum (clj->js (domain/get-stacked-hours-data monthly-hours)))
+                           (call chart))
+                       (.windowResize js/nv.utils (.-update (.duration chart 0)))
+                       (reagent/set-state component {:chart chart})))))
+
+(defn update-bar-data [component-name chart monthly-hours]
+  (println "new hours")
+  (.. js/d3
+      (select (str "#" component-name " svg"))
+      (datum (clj->js (domain/get-stacked-hours-data monthly-hours)))
+      (call chart)))
+
 (defn create-balance-view [component-name width height]
   (let [x-padding (* width 0.24)
         x-line-padding (* width 0.21)
@@ -80,7 +166,7 @@
         (.attr "height" 0)
         (.attr "width" balance-width))
 
-    (append-label svg "actual-hours-label" label-color "Your billable hours" width)
+    (append-label svg "actual-hours-label" label-color "your billable hours" width)
     (append-line svg
                  "goal-line"
                  balance-line-color
@@ -91,7 +177,7 @@
     ;; goal stats
     (append-right-side-text svg "goal-percent-text" label-color (- width x-line-padding))
     (append-left-side-text svg "goal-hours-text" label-color x-line-padding)
-    (append-label svg "goal-label" label-color "Today's goal" width)
+    (append-label svg "goal-label" label-color "today's goal" width)
 
     ;; balance stats
     (append-line svg "actual-hours-line" balance-line-color width (/ height 2) x-line-padding)
@@ -394,6 +480,14 @@
     (-> d3-balance-in-days-text
         (.text (format-days-and-hours balance-hours)))))
 
+(defn chart-view [component-name monthly-hours]
+  (->> monthly-hours
+       (into (sorted-map-by <))
+       (vals)
+       (clj->js)
+       (create-monthly-bar-view component-name 1200 200))
+  )
+
 (defn balance-view [component-name viewport-size todays-target-hours actual-hours-today total-days-goal]
   (let [{total-width :width} viewport-size
         balance-view-width (min (* 0.95 total-width) 500)
@@ -518,3 +612,26 @@
           (.attr "dy" ".15em")
           (.style "text-anchor" "middle")
           (.text (fn [d] (-> d (.-data) (.-age))))))))
+
+
+(def ^:const stats-orientation-switch-threshold 992)
+
+(defn global-stats-multibarchart [component-name viewport-width stats-to-display]
+  (.addGraph js/nv (fn []
+                     (let [chart (if (> stats-orientation-switch-threshold
+                                        viewport-width)
+                                   (.. js/nv -models multiBarHorizontalChart
+                                       (showValues true)
+                                       (valueFormat (.format js/d3 ",.0f"))
+                                       (margin #js {:left 80}))
+                                   (.. js/nv -models multiBarChart
+                                      (staggerLabels true)))]
+                       (.. chart
+                           (x (fn [team] (.-name team)))
+                           (y (fn [team] (.-value team)))
+                           (showControls false)
+                           (duration 1500))
+                      (.. js/d3 (select (str "#" component-name " svg"))
+                          (datum (clj->js stats-to-display))
+                          (call chart))
+                      (.windowResize js/nv.utils (.-update (.duration chart 0)))))))
