@@ -2,12 +2,7 @@
   (:require [plumbing.graph :as graph]
             [plumbing.map :as map]
             [plumbing.core :as plumbing]
-            [plumbing.fnk.pfnk :as pfnk]
-    )
-  #?(:clj
-     (:import (lacij.view.core Decorator NodeView)
-              (java.awt Rectangle)
-              (org.apache.batik.dom.svg SVGDOMImplementation))))
+            [plumbing.fnk.pfnk :as pfnk]))
 
 (defn merge-inputs [f]
   (pfnk/fn->fnk

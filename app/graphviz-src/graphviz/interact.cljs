@@ -150,20 +150,18 @@
         dest-y (float-attr new-selected "data-y")
         {:keys [width height]} (get-viewport-size)
         node-width (get sizes "node/width")
-        node-height (get sizes "node/height")]
+        node-height (get sizes "node/height")
+        move-base-params {:center-x  dest-x
+                          :center-y  dest-y
+                          :node-ele-width node-width
+                          :node-ele-height node-height}]
     (scroll-to! [(+ (/ node-width 2) (- dest-x (/ width 2))) (+ (/ node-height 2) (- dest-y (/ height 2)))] 300)
     (move-in-eles
-      {:center-x  dest-x
-       :center-y  dest-y
-       :node-eles sorted-in-eles
-       :node-ele-width node-width
-       :node-ele-height node-height})
+      (assoc move-base-params
+        :node-eles sorted-in-eles))
     (move-out-eles
-      {:center-x  dest-x
-       :center-y  dest-y
-       :node-eles sorted-out-eles
-       :node-ele-width node-width
-       :node-ele-height node-height})
+      (assoc move-base-params
+        :node-eles sorted-out-eles))
     (doseq [other-g other-gs]
       (classes/add other-g "background"))
     (doseq [g highlighted-gs]

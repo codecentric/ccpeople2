@@ -69,8 +69,9 @@
    :test    {}
    :uberjar {:aot          :all
              :uberjar-name "ccdashboard.jar"
-             :prep-tasks   [["clean"] ["cljsbuild" "once" "min"] ["compile"]]
-             :omit-source  true}
+             :prep-tasks   [["clean"] ["cljsbuild" "once" "min"] ["cljsbuild" "once" "vizgraph"] ["compile"]]
+             :omit-source  false
+             }
    :repl    {:resource-paths ^:replace ["resources" "target/figwheel"]
              :prep-tasks     ^:replace [["compile"]]}}
 
@@ -82,7 +83,7 @@
   :jvm-opts ^:replace ["-Dfile.encoding=UTF-8"]
   :clean-targets ^{:protect false} ["resources/public/js/compiled" "target"]
 
-  :cljsbuild {:builds [{:id           "dev"
+  :cljsbuild {:builds [{:id           "vizgraph"
                         :source-paths ["graphviz-src"]
                         ;                        :figwheel     {:on-jsload "app.client/on-js-reload"}
 
