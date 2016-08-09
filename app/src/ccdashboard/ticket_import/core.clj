@@ -520,7 +520,7 @@
                                                team-ids-all))
 
           :existing-membership-ids     (fnk [dbval]
-                                          (into []
+                                          (into #{}
                                                 (map first)
                                                 (d/q '{:find [?id]
                                                        :where [[_ :membership/id ?id]]}
@@ -568,7 +568,7 @@
           :db-retractable-membership   (fnk [existing-membership-ids jira-membership-ids]
                                          (into []
                                                (map retract-datomic-membership)
-                                               (remove (partial contains? jira-membership-ids) existing-membership-ids)))
+                                               (set/difference existing-membership-ids jira-membership-ids)))
           :db-transactions             (fnk [db-user-with-join-date domain-users-new db-team-name-with-team-id db-retractable-membership db-user-and-membership]
                                          (vector domain-users-new
                                                  db-user-with-join-date
