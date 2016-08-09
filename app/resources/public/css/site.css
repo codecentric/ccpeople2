@@ -211,3 +211,17 @@ input[type=checkbox]#show-menu:checked ~ #menu ul {
     left: 0;
     z-index: 1;
 }
+
+.statistic-left {
+    float: left;
+    text-align: left;
+    width: 50%;
+    border-bottom: 1px solid #f3f3f3;
+}
+
+.statistic-right {
+    float: right;
+    text-align: right;
+    width: 50%;
+    border-bottom: 1px solid #f3f3f3;
+}

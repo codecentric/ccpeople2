@@ -194,9 +194,10 @@
         (.text "?"))))
 
 (defn format-percent [percent]
-  (pprint/cl-format nil
-                    "~,1f%"
-                    percent))
+  (pprint/cl-format nil "~,1f%" percent))
+
+(defn format-decimal [num]
+  (pprint/cl-format nil "~,2F" num))
 
 (defn update-line-y [line y]
   (-> line

@@ -12,9 +12,10 @@
                [goog.dom :as dom]
                cljs-time.extend
                [plumbing.core :refer-macros [fnk]]]
-        :clj  [[clj-time.core :as time]
+        :clj  [
+               [clj-time.core :as time]
                [plumbing.core :refer [fnk]]])
-            [clojure.set :as set]))
+       [clojure.set :as set]))
 
 (def standard-billable-days-goal 180)
 
@@ -22,11 +23,11 @@
    (defn get-viewport-size []
      (let [window (dom/getWindow)
            viewport-size (dom/getViewportSize window)]
-       {:width (.-width viewport-size)
+       {:width  (.-width viewport-size)
         :height (.-height viewport-size)}))
    :clj
    (defn get-viewport-size []
-     {:width 500
+     {:width  500
       :height 300}))
 
 (def initial-state {:today         (time/today)
@@ -79,16 +80,16 @@
 
 (defn call-api [& [params]]
   (ajax/GET "/api"
-      (cond-> (merge GET-template
-                     {:handler         (if (:consultant params)
-                                         handle-consultant-api-response
-                                         handle-initial-api-response)
-                      :reader          (transit/reader :json
-                                                       {:handlers
-                                                        {"date/local" (fn [date-fields]
-                                                                        (apply time/local-date date-fields))}})})
-              params
-              (assoc :params params))))
+            (cond-> (merge GET-template
+                           {:handler (if (:consultant params)
+                                       handle-consultant-api-response
+                                       handle-initial-api-response)
+                            :reader  (transit/reader :json
+                                                     {:handlers
+                                                      {"date/local" (fn [date-fields]
+                                                                      (apply time/local-date date-fields))}})})
+                    params
+                    (assoc :params params))))
 
 
 (add-watch app-state
@@ -105,7 +106,7 @@
 
 (defn call-team-stats-api []
   (ajax/GET "/team-stats"
-      (assoc GET-template :handler handle-team-stats-api-response)))
+            (assoc GET-template :handler handle-team-stats-api-response)))
 
 (defn current-period-start [today]
   ;; period is closed on 5th of next month, unless in January
@@ -157,11 +158,11 @@
 
 (def worktype-order [:billable :other :vacation :parental-leave :sickness])
 
-(def worktype->display-name {:vacation "Holidays"
+(def worktype->display-name {:vacation       "Holidays"
                              :parental-leave "Parental leave"
-                             :sickness "Sickness"
-                             :other "Other"
-                             :billable "Billable hours"})
+                             :sickness       "Sickness"
+                             :other          "Other"
+                             :billable       "Billable hours"})
 
 (defn worktype-fn [{:keys [worklogs tickets customers]}]
   (let [codecentric-id (customer-id-by-name "codecentric" customers)
@@ -191,24 +192,24 @@
 (defn get-worktypes [monthly-hours]
   (distinct (mapcat keys (vals monthly-hours))))
 
-(def i->month {1 "Jan"
-               2 "Feb"
-               3 "Mar"
-               4 "Apr"
-               5 "May"
-               6 "Jun"
-               7 "Jul"
-               8 "Aug"
-               9 "Sep"
+(def i->month {1  "Jan"
+               2  "Feb"
+               3  "Mar"
+               4  "Apr"
+               5  "May"
+               6  "Jun"
+               7  "Jul"
+               8  "Aug"
+               9  "Sep"
                10 "Oct"
                11 "Nov"
                12 "Dec"})
 
-(def worktype->color {:vacation "#e36588"
+(def worktype->color {:vacation       "#e36588"
                       :parental-leave "#f1db4b"
-                      :sickness "#a5e2ed"
-                      :other "#1FB7D4"
-                      :billable "#7FFBC6"})
+                      :sickness       "#a5e2ed"
+                      :other          "#1FB7D4"
+                      :billable       "#7FFBC6"})
 
 (defn get-monthly-hours-by-worktype [monthly-hours worktype]
   (reduce (fn [hours-per-month month]
@@ -222,7 +223,7 @@
     (into []
           (map (fn [[worktype data]] {:key    (get worktype->display-name worktype)
                                       :values data
-                                      :color (get worktype->color worktype)}))
+                                      :color  (get worktype->color worktype)}))
           worktype->data)))
 
 (defn working-days-left-without-today [today]
@@ -350,7 +351,7 @@
   (get-in state [:user :user/signed-in?]))
 
 (def app-model-graph
-  {:monthly-hours                    (fnk [state]
+  {:monthly-hours                         (fnk [state]
                                             (hours-by-month state))
    :worklogs-billable                     (fnk [state]
                                             (billable-worklogs state))
@@ -413,14 +414,10 @@
    :burndown-hours-per-workday            (fnk [billable-days-goal-scaled workdays-total]
                                             (/ (* billable-days-goal-scaled 8)
                                                workdays-total))
-   :hour-goal-today                       (fnk [number-workdays-till-today
-                                                number-taken-vacation-days
-                                                number-parental-leave-days-till-today
-                                                burndown-hours-per-workday]
-                                            (* (- number-workdays-till-today
-                                                  number-taken-vacation-days
-                                                  number-parental-leave-days-till-today)
-                                               burndown-hours-per-workday))
+   :number-worked-days-till-today         (fnk [number-workdays-till-today number-taken-vacation-days number-parental-leave-days-till-today]
+                                            (- number-workdays-till-today number-taken-vacation-days number-parental-leave-days-till-today))
+   :hour-goal-today                       (fnk [number-worked-days-till-today burndown-hours-per-workday]
+                                            (* number-worked-days-till-today burndown-hours-per-workday))
    :unbooked-days-stats                   (fnk [state current-period-start-date]
                                             (compute-unbooked-days-stats
                                               (-> state
@@ -436,6 +433,12 @@
                                             (if my-stats?
                                               (/ (sick-leave-hours state) 8)
                                               "X"))
-   })
+   :billable-hours-goal-scaled            (fnk [billable-days-goal-scaled]
+                                            (* billable-days-goal-scaled 8))
+   :personal-utilization-year             (fnk [hours-billed billable-hours-goal-scaled]
+                                            (/ hours-billed billable-hours-goal-scaled))
+   :personal-utilization-till-today       (fnk [hours-billed number-worked-days-till-today]
+                                            (/ hours-billed (* 8 number-worked-days-till-today)))})
+
 
 (def app-model (graph/compile-cancelling app-model-graph))

@@ -60,6 +60,11 @@
 
 (def month-day-formatter (format/formatter "dd.MM.yyyy"))
 
+(def year-formatter (format/formatter "yyyy"))
+
+(defn format-year [date]
+  (format/unparse-local-date year-formatter date))
+
 (defn month-day-today [today]
   (format/unparse-local-date month-day-formatter today))
 

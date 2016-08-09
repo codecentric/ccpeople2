@@ -1,11 +1,11 @@
 (ns ccdashboard.client.user-stats
   (:require [clojure.string :as str]
-            [ccdashboard.domain.days :as days]
-            [ccdashboard.domain.core :as domain]
-            [ccdashboard.client.dataviz :as dataviz]
-            [reagent.core :as reagent]
             [clojure.set :as set]
-            [ccdashboard.client.react :refer [select]]))
+            [ccdashboard.domain.core :as domain]
+            [ccdashboard.domain.days :as days]
+            [ccdashboard.client.dataviz :as dataviz]
+            [ccdashboard.client.react :refer [select]]
+            [reagent.core :as reagent]))
 
 (defn monthly-stats-hours [state-atom component-name component]
   (let [state @state-atom
@@ -51,8 +51,8 @@
   (let [_ @state-atom]
     [:div {:style {:margin-left  "auto"
                    :margin-right "auto"
-                   :width 700
-                   :height 300}
+                   :width        700
+                   :height       300}
            :id    component-name}
      [:svg]]))
 
@@ -97,16 +97,16 @@
     (str n " days")))
 
 (defn days-rect [icon-name color background-color label number-days]
-  [:div {:style {:width "90px"
-                 :height "120px"
-                 :margin "6px"
+  [:div {:style {:width            "90px"
+                 :height           "120px"
+                 :margin           "6px"
                  :background-color background-color
-                 :color color
-                 :display "flex"
-                 :justify-content "space-around"
-                 :flex-direction "column"}}
+                 :color            color
+                 :display          "flex"
+                 :justify-content  "space-around"
+                 :flex-direction   "column"}}
    [:div
-    [:div {:class "circle"
+    [:div {:class   "circle"
            :display "flex"}
      [:i {:class icon-name}]]]
    [:div label]
@@ -116,6 +116,11 @@
   (->> days
        (map days/format-simple-date)
        (str/join ", ")))
+
+(defn statistic-text [text value]
+  [:div
+   [:div {:class "statistic-left"} [:div {:style {:padding "3px"}} text]]
+   [:div {:class "statistic-right"} [:div {:style {:padding "3px"}} value]]])
 
 ;; creates a constant that can be overriden at compile time
 (goog-define timetrack-uri "https://the.timetracking-system.url")
@@ -128,9 +133,9 @@
       [:div {:style {:background-color background-color
                      :color            font-color
                      :padding          "8px 15px 8px 15px"
-                     :position "relative"}}
-       [:a {:href timetrack-uri
-            :class "div-link"
+                     :position         "relative"}}
+       [:a {:href   timetrack-uri
+            :class  "div-link"
             :target "_blank"} [:span]]
        (str description unbooked-days-count)
        [:br]
@@ -149,6 +154,10 @@
         used-leave (:number-taken-vacation-days model-data)
         number-parental-leave-days (:number-parental-leave-days model-data)
         number-planned-vacation-days (:number-planned-vacation-days model-data)
+        billable-hours-goal-scaled (:billable-hours-goal-scaled model-data)
+        hours-billed (:hours-billed model-data)
+        personal-utilization-year (:personal-utilization-year model-data)
+        personal-utilization-till-today (:personal-utilization-till-today model-data)
         today-str (days/month-day-today (:today state))]
     [:div {:style {:overflow "hidden"}}
      (days-info "days w/o booked hours: " "#e36588" "white" days-without-booked-hours)
@@ -197,19 +206,29 @@
           "workdays-left"
           :workdays-left-actually
           :workdays-total]]]]
-      [:div {:style {:display "flex"
-                     :flex-wrap "wrap"
+      [:div {:style {:display         "flex"
+                     :flex-wrap       "wrap"
                      :justify-content "center"
-                     :border-bottom "1px solid #f3f3f3"}}
+                     :border-bottom   "1px solid #f3f3f3"}}
+
+       [:div {:style {:width "300px"}} [:h2 (days/format-year (:today state))]
+        (statistic-text "Billable hours goal:" (dataviz/format-decimal billable-hours-goal-scaled))
+        (statistic-text "Hours billed: " (dataviz/format-decimal hours-billed))
+        (statistic-text "Utilization in year: " (dataviz/format-decimal personal-utilization-year))
+        (statistic-text "Utilization till today: " (dataviz/format-decimal personal-utilization-till-today))]]
+      [:div {:style {:display         "flex"
+                     :flex-wrap       "wrap"
+                     :justify-content "center"
+                     :border-bottom   "1px solid #f3f3f3"}}
        [:div [:h2 "hours by month"]
         [monthly-component domain/app-state "monthly-stats"]]]
       [:div {:style {:display         "flex"
                      :justify-content "center"
-                     :flex-wrap       "wrap"
+                     :flex-wrap       "wrap"}}
                      ;:margin-left  "auto"
                      ;:margin-right "auto"
                      ;:width        "100%"
-                     }}
+
        [:div {:style {:display        "flex"
                       :flex-direction "column"
                       :align-items    "flex-start"
