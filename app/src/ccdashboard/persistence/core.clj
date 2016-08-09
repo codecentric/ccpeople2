@@ -111,7 +111,7 @@
 (defn domain-membership [dbval db-membership]
   (-> db-membership
       (:db/id)
-      ((fn [x] (d/pull dbval '[* {:membership/team [:team/id]}] x)))
+      (->> (d/pull dbval '[* {:membership/team [:team/id]}]))
       (dissoc :db/id)
       (model/to-domain-membership)))
 

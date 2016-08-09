@@ -476,27 +476,29 @@
    :user/start-date (get-team-member-start-date team-member)
    :user/jira-username (get-team-member-jira-username team-member)})
 
-(defn to-datomic-team-name-with-id [{:keys [id name]}]
+(defn to-datomic-team-name-with-id [team]
   {:db/id (storage/people-tempid)
-   :team/name name
-   :team/id id})
+   :team/name (:name team)
+   :team/id (:id team)})
 
-(defn to-membership-id [name team date]
-  (str name "-"
+(defn to-membership-id [jira-username team date]
+  (str jira-username "-"
        team "-"
        (if date
          (time-format/unparse model/timestamp-formatter
                               (time-local/to-local-date-time date))
          "none")))
 
-(defn to-datomic-membership [{{:keys [name]} :member
-                              {:keys [teamId dateFromANSI dateToANSI availability]} :membership}]
-  {:db/id           [:user/jira-username name]
-   :user/membership (cond-> {:membership/id (to-membership-id name teamId dateFromANSI)
-                             :membership/team [:team/id teamId]
-                             :membership/availability availability}
-                      dateFromANSI (assoc :membership/start-date dateFromANSI)
-                      dateToANSI (assoc :membership/end-date dateToANSI))})
+(defn to-datomic-membership [{:keys [member membership]}]
+  (let [jira-username (:name member)
+        team (:teamId membership)
+        date-from (:dateFromANSI membership)]
+   {:db/id           [:user/jira-username jira-username]
+    :user/membership (cond-> {:membership/id (to-membership-id jira-username team date-from)
+                              :membership/team [:team/id team]
+                              :membership/availability (:availability membership)}
+                       dateFromANSI (assoc :membership/start-date date-from)
+                       dateToANSI (assoc :membership/end-date (:dateToANSI membership)))}))
 
 (defn retract-datomic-membership [membership-id]
   [:db.fn/retractEntity [:membership/id membership-id]])
@@ -525,8 +527,8 @@
                                                      dbval)))
           :jira-user-membership        (fnk [team-members-all db-usernames-all]
                                          (into [] ;; remove keys for suprious empty values
-                                               (comp (filter (fn [{{:keys [name]} :member}]
-                                                               (contains? db-usernames-all name)))
+                                               (comp (filter (fn [{:keys [member]}]
+                                                               (contains? db-usernames-all (:name member))))
                                                      (map (fn [member]
                                                             (cond-> member ;; TODO Find a nicer Version
                                                               (= "" (get-team-member-start-date member))
