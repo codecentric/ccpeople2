@@ -492,13 +492,14 @@
 (defn to-datomic-membership [{:keys [member membership]}]
   (let [jira-username (:name member)
         team (:teamId membership)
-        date-from (:dateFromANSI membership)]
+        date-from (:dateFromANSI membership)
+        date-end (:dateToANSI membership)]
    {:db/id           [:user/jira-username jira-username]
     :user/membership (cond-> {:membership/id (to-membership-id jira-username team date-from)
                               :membership/team [:team/id team]
                               :membership/availability (:availability membership)}
-                       dateFromANSI (assoc :membership/start-date date-from)
-                       dateToANSI (assoc :membership/end-date (:dateToANSI membership)))}))
+                       date-from (assoc :membership/start-date date-from)
+                       date-end (assoc :membership/end-date date-end))}))
 
 (defn retract-datomic-membership [membership-id]
   [:db.fn/retractEntity [:membership/id membership-id]])
