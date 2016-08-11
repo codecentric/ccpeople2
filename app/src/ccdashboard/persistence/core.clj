@@ -228,7 +228,7 @@
         (d/q '{:find [?id (count ?members)]
                :where [[?team :team/id ?id]
                        [?membership :membership/team ?team]
-                       [?members :user/membership ?memberhsip]]}
+                       [?members :user/membership ?membership]]}
              dbval)))
 
 (defn teams-stats-seq [dbval]
