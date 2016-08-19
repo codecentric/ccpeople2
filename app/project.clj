@@ -111,6 +111,6 @@
                  "artifactory.codecentric.de" {:url "https://artifactory.codecentric.de/artifactory/repo"
                                                :username [:env/ccartuser]
                                                :password [:env/ccartpass]}
-                 }
+                 "nexus" {:url "http://nexus:8081/nexus/content/groups/public"}}
 
   )
