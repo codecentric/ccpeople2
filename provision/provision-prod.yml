@@ -1,8 +1,11 @@
 ---
 - hosts: ccp
   gather_facts: no
+  become: true
   vars:
     user: "ubuntu"
+  roles:
+    - { role: itconsultis.provision-debian-docker, docker_compose_version: 1.8.0}
   tasks:
     # todo add docker & docker-compose installation.
     - name: create bin folder

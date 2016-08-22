@@ -8,16 +8,24 @@ services:
       - "/home/ubuntu/data/postgres:/var/lib/postgresql/data"
     environment:
       - POSTGRES_PASSWORD
+      - DATOMIC_POSTGRES_PASSWORD
     restart: always
   datomicdb:
     image: dockerhub.codecentric.de/ccdashboard-datomic
+    depends_on:
+      - postgres
     ports:
       - "4334:4334"
     volumes:
       - "/home/ubuntu/data/datomic:/data"
+    command: -Ddatomic.sqlPassword=${DATOMIC_POSTGRES_PASSWORD} config/transactor.properties
+    environment:
+      - DATOMIC_POSTGRES_PASSWORD
     restart: always
   app:
     image: dockerhub.codecentric.de/ccdashboard-app
+    depends_on:
+      - datomicdb
     ports:
       - "35001:35001"
       - "8000:8000"
