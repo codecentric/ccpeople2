@@ -28,7 +28,8 @@ services:
       - DATOMIC_POSTGRES_PASSWORD
     restart: always
   app:
-    build: app
+    # must match the jobName
+    image: ccpeople2
     depends_on:
       - datomicdb
     ports:
