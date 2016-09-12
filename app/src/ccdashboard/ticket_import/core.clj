@@ -590,7 +590,7 @@
   (let [import-result (import-fn {:dbval (db conn)
                                   :today (time/today)
                                   :jira  jira})]
-    (log/info logger "done import jira" (:db-transactions-stats import-result))
+    (log/info logger "Finished jira sync:" (:db-transactions-stats import-result))
     (def ii import-result)
     (doseq [tx (:db-transactions import-result)]
       @(d/transact conn tx))
@@ -613,11 +613,9 @@
       (do                                                   ;(future (sync-with-jira! conn jira-client jira-full-re-import))
           (schedule scheduler
                     (fn []
-                      (log/info logger "Starting import: " (.getName (Thread/currentThread)))
-                      (try (sync-with-jira! conn jira-client jira-import)
-                           (catch Throwable ex
-                             (log/error logger ex "import error:" (.getMessage ex))
-                             (def impex ex))))
+                      (log/info logger "Starting import:" (.getName (Thread/currentThread)))
+                      (sync-with-jira! conn jira-client jira-import)
+                      (log/info logger "Finished import:" (.getName (Thread/currentThread))))
                     60)
           (schedule scheduler
                     (partial sync-start-dates! conn jira-client)

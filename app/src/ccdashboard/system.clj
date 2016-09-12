@@ -23,6 +23,8 @@
            (java.lang.invoke MethodHandles)
            (org.slf4j LoggerFactory)))
 
+(def logger ^ch.qos.logback.classic.Logger (LoggerFactory/getLogger "ccdashboard.system"))
+
 (def base-config
   {:app {:middleware     [[wrap-not-found :not-found]
                           [ring-format/wrap-restful-format :transit-custom]
@@ -73,7 +75,18 @@
   worklog/Scheduler
   (schedule [this f repeat-delay]
     ;; todo handle exception happening in f
-    (.scheduleWithFixedDelay (:executor this) f 10 repeat-delay TimeUnit/SECONDS)))
+    (.scheduleWithFixedDelay (:executor this)
+                             (fn [] (try
+                                      (f)
+                                      (catch Throwable t
+                                        (log/error logger
+                                                   t
+                                                   "scheduler error: "
+                                                   (.getMessage t))
+                                        (def schedex t))))
+                             10
+                             repeat-delay
+                             TimeUnit/SECONDS)))
 
 (defn new-scheduler []
   (map->ExecutorScheduler {}))
