@@ -108,18 +108,29 @@
       (dissoc :db/id)
       (model/to-domain-customer)))
 
-(defn domain-user [db-user]
-  (-> db-user
-      (as-map)
-      (update-in-when [:user/team] :team/id)
-      (model/to-domain-user)))
+(defn domain-membership [dbval db-membership]
+  (-> db-membership
+      (:db/id)
+      (->> (d/pull dbval '[* {:membership/team [:team/id]}]))
+      (dissoc :db/id)
+      (model/to-domain-membership)))
+
+(defn domain-user [dbval db-user]
+  (let [memberships (into #{}
+                          (map (partial domain-membership dbval))
+                          (:user/membership db-user))]
+   (-> db-user
+       (as-map)
+       (dissoc :db/id :user/team)
+       (assoc :user/membership memberships)
+       (model/to-domain-user))))
 
 (defn existing-user-data [dbval id]
   (let [user-entity (d/entity dbval id)
         db-worklogs (:worklog/_user user-entity)
         tickets (into #{} (map :worklog/ticket) db-worklogs)
         customers (into #{} (keep :ticket/customer) tickets)]
-    {:user      (domain-user user-entity)
+    {:user      (domain-user dbval user-entity)
      :worklogs  (mapv domain-worklog db-worklogs)
      :tickets   (mapv domain-ticket tickets)
      :customers (mapv domain-customer customers)}))
@@ -208,14 +219,16 @@
                        [?worklog :worklog/ticket ?ticket]
                        [?worklog :worklog/hours ?hours]
                        [?worklog :worklog/user ?user]
-                       [?user :user/team ?team]]}
+                       [?user :user/membership ?membership]
+                       [?membership :membership/team ?team]]}
              dbval)))
 
 (defn members-in-teams-map [dbval]
   (into {}
         (d/q '{:find [?id (count ?members)]
                :where [[?team :team/id ?id]
-                       [?members :user/team ?team]]}
+                       [?membership :membership/team ?team]
+                       [?members :user/membership ?membership]]}
              dbval)))
 
 (defn teams-stats-seq [dbval]

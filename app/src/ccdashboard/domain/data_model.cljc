@@ -27,11 +27,17 @@
   #?(:clj java.lang.Double
      :cljs js/Number))
 
+(defn parse-int [i]
+  #?(:clj (Integer/parseInt i)
+     :cljs (js/parseInt i)))
+
 (s/defschema PositiveInt (s/constrained s/Int pos? "Positive number"))
 
 (s/defschema NonNegativeNumber (s/constrained s/Num (fn [n] (>= n 0)) "Non-negative number"))
 
 (s/defschema NonEmptyString (s/constrained s/Str seq "Non-empty string"))
+
+(s/defschema Percentage (s/constrained NonNegativeNumber (fn [n] (<= 0 n 1)) "Double between 0 and 1"))
 
 (s/defschema EmailAddress (s/constrained NonEmptyString
                                          (fn [s] (re-matches #"[^@]+@[^@]+" s))
@@ -148,6 +154,18 @@
    ;:mission :summary :lead :leadUser
    s/Keyword s/Any})
 
+(s/defschema JiraMembership
+  {:id         s/Int
+   :membership {:teamId         s/Int
+                (s/optional-key :dateFromANSI) IDate
+                (s/optional-key :dateToANSI) IDate
+                :availability   Percentage
+                s/Keyword       s/Any}
+   :member     {:name     NonEmptyString
+                s/Keyword s/Any}
+   s/Keyword   s/Any
+   })
+
 (s/defschema JiraTeamMember
   {:id         s/Int
    :membership {(s/optional-key :dateFromANSI) IDate
@@ -179,6 +197,12 @@
 (s/defschema DomainCustomer {:customer/id   PositiveInt
                              :customer/name NonEmptyString
                              s/Keyword      s/Any})
+
+(s/defschema DomainMembership {:membership/team                        PositiveInt
+                               :membership/availability                Percentage
+                               (s/optional-key :membership/start-date) LocalDate
+                               (s/optional-key :membership/end-date)   LocalDate
+                               s/Keyword                               s/Any})
 
 (s/defschema DomainUser {;; :user/id is assigned on the first login -> only optional here to simplify REPLing on fresh users
                          (s/optional-key :user/id)         s/Uuid
@@ -213,6 +237,14 @@
 (def date-and-string-coercer
   (coerce/first-matcher [datetime-matcher coerce/string-coercion-matcher]))
 
+(defn percentage-coercer [schema]
+  (when (= Percentage schema)
+    (coerce/safe
+     (fn [x]
+       (if (and (string? x) (re-matches #"^\d{1,2}|100$" x))
+         (double (/ (parse-int x) 100))
+         x)))))
+
 (def jira-worklog-coercer
   (coerce/coercer JiraWorkLog
                   date-and-string-coercer))
@@ -220,6 +252,10 @@
 (def jira-issue-coercer
   (coerce/coercer JiraIssue
                   date-and-string-coercer))
+
+(def jira-membership-coercer
+  (coerce/coercer JiraMembership
+                  (coerce/first-matcher [percentage-coercer date-and-string-coercer])))
 
 (def jira-team-member-coercer
   (coerce/coercer JiraTeamMember
@@ -233,9 +269,21 @@
           (time-coerce/to-local-date x)
           x)))))
 
+(defn membership-team-coercer [schema]
+  (when (= PositiveInt schema)
+    (coerce/safe
+     (fn [x]
+       (if (s/validate {:team/id PositiveInt} x)
+         (:team/id x)
+         x)))))
+
 (def domain-worklog-coercer
   (coerce/coercer DomainWorklog
                   local-date-coercer))
+
+(def domain-membership-coercer
+  (coerce/coercer DomainMembership
+                  (coerce/first-matcher [membership-team-coercer local-date-coercer])))
 
 (def domain-user-coercer
   (coerce/coercer DomainUser
@@ -264,6 +312,9 @@
                            throw-on-invalid-schema-error
                            jira-worklog-coercer))
 
+(def to-jira-membership (comp throw-on-invalid-schema-error
+                              jira-membership-coercer))
+
 (def to-jira-team-member (comp throw-on-invalid-schema-error
                                jira-team-member-coercer))
 
@@ -285,5 +336,8 @@
 
 (def to-domain-user (comp throw-on-invalid-schema-error
                           domain-user-coercer))
+
+(def to-domain-membership (comp throw-on-invalid-schema-error
+                                domain-membership-coercer))
 
 (def to-domain-team (partial s/validate DomainTeam))
