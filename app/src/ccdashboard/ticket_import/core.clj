@@ -3,7 +3,7 @@
             [aleph.http :as http]
             [aleph.http.client-middleware :as mw]
             [clojure.string :as str]
-            [ccdashboard.util :refer [matching]]
+            [ccdashboard.util :refer [matching min-key-comparable]]
             [datomic.api :refer [db] :as d]
             [plumbing.core :refer [safe-get fnk]]
             [environ.core :refer [env]]
@@ -521,30 +521,30 @@
                                                team-ids-all))
 
           :existing-membership-ids     (fnk [dbval]
-                                          (into #{}
-                                                (map first)
-                                                (d/q '{:find [?id]
-                                                       :where [[_ :membership/id ?id]]}
-                                                     dbval)))
+                                         (into #{}
+                                               (map first)
+                                               (d/q '{:find  [?id]
+                                                      :where [[_ :membership/id ?id]]}
+                                                    dbval)))
           :jira-user-membership        (fnk [team-members-all db-usernames-all]
                                          (into [] ;; remove keys for suprious empty values
                                                (comp (filter (fn [{:keys [member]}]
                                                                (contains? db-usernames-all (:name member))))
                                                      (map (fn [member]
                                                             (cond-> member ;; TODO Find a nicer Version
-                                                              (= "" (get-team-member-start-date member))
-                                                              (update :membership dissoc :dateFromANSI)
-                                                              (= "" (get-team-member-end-date member))
-                                                              (update :membership dissoc :dateToANSI))))
+                                                                    (= "" (get-team-member-start-date member))
+                                                                    (update :membership dissoc :dateFromANSI)
+                                                                    (= "" (get-team-member-end-date member))
+                                                                    (update :membership dissoc :dateToANSI))))
                                                      (map model/to-jira-membership))
                                                team-members-all))
           :jira-membership-ids         (fnk [jira-user-membership]
-                                            (into #{}
-                                                  (map (fn [{:keys [member membership]}]
-                                                         (to-membership-id (:name member)
-                                                                           (:teamId membership)
-                                                                           (:dateFromANSI membership))))
-                                                  jira-user-membership))
+                                         (into #{}
+                                               (map (fn [{:keys [member membership]}]
+                                                      (to-membership-id (:name member)
+                                                                        (:teamId membership)
+                                                                        (:dateFromANSI membership))))
+                                               jira-user-membership))
           :team-members-with-join-date (fnk [team-members-all]
                                          (into []   ;; ignore spurious empty values
                                                (comp (filter (comp seq get-team-member-start-date))
@@ -554,10 +554,17 @@
                                          (into #{}
                                                (map get-team-member-jira-username)
                                                team-members-with-join-date))
-          :db-user-with-join-date      (fnk [team-members-with-join-date]
+          :non-unique-db-user-with-join-date
+                                       (fnk [team-members-with-join-date]
                                          (into []
                                                (map to-datomic-user-join-date)
                                                team-members-with-join-date))
+          :db-user-with-join-date      (fnk [non-unique-db-user-with-join-date]
+                                         (->> non-unique-db-user-with-join-date
+                                              (group-by :user/jira-username)
+                                              (vals)
+                                              (map (partial apply min-key-comparable :user/start-date))
+                                              (into [])))
           :db-team-name-with-team-id   (fnk [teams-all]
                                          (into []
                                                (map to-datomic-team-name-with-id)
