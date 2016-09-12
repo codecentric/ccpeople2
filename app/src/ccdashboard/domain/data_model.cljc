@@ -27,6 +27,10 @@
   #?(:clj java.lang.Double
      :cljs js/Number))
 
+(defn parse-int [i]
+  #?(:clj (Integer/parseInt i)
+     :cljs (js/parseInt i)))
+
 (s/defschema PositiveInt (s/constrained s/Int pos? "Positive number"))
 
 (s/defschema NonNegativeNumber (s/constrained s/Num (fn [n] (>= n 0)) "Non-negative number"))
@@ -235,7 +239,7 @@
     (coerce/safe
      (fn [x]
        (if (and (string? x) (re-matches #"^\d{1,2}|100$" x))
-         (double (/ (Integer/parseInt x) 100))
+         (double (/ (parse-int x) 100))
          x)))))
 
 (def jira-worklog-coercer
