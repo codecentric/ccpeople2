@@ -68,7 +68,7 @@
   (start [this]
     (if (:executor this)
       this
-      (assoc this :executor (Executors/newSingleThreadScheduledExecutor))))
+      (assoc this :executor (Executors/newFixedThreadPool 4))))
   (stop [this]
     (when-let [executor (:executor this)]
       (.shutdownNow executor))
