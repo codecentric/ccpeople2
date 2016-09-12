@@ -8,6 +8,10 @@
             [buddy.auth :as auth :refer [authenticated?]]
             [com.stuartsierra.component :as component]
             [ring.util.response :as response]
+
+            [graphviz.core :as graphviz]
+            [cheshire.core :as json]
+            [ccdashboard.ticket-import.core :as worklog]
             [datomic.api :as d :refer [db]])
   (:import (org.slf4j LoggerFactory)
            (java.util UUID)))
@@ -48,11 +52,14 @@
 
 (def ccdashboard-cookie-id "ccdid")
 
+(defn logout-response []
+  (-> (response/redirect (env :app-hostname))
+      (response/set-cookie ccdashboard-cookie-id "" {:max-age 0})))
+
 (defn logout-endpoint []
   (map->Endpoint {:route   "/logout"
                   :handler (fn [req]
-                             (-> (response/redirect (env :app-hostname))
-                                 (response/set-cookie ccdashboard-cookie-id "" {:max-age 0})))
+                             (logout-response))
                   :tag     :logout}))
 
 (defn auth-handler [conn req]
@@ -80,7 +87,11 @@
   (if-let [user-id (oauth/get-signed-user-id req)]
     (if-let [consultant-username (get-in req [:params :consultant])]
       (response (storage/existing-user-data-by-username conn consultant-username))
-      (response (storage/existing-user-data-for-user conn (UUID/fromString user-id))))
+      ;; the cookie is valid, but the user doesn't exist (anymore), can happen after re-bootstrapping the database
+      ;; make the user login again, resulting in a cookie containing the current user-uuid.
+      (if-let [user-data (storage/existing-user-data-for-user conn (UUID/fromString user-id))]
+        (response user-data)
+        (logout-response)))
     (-> (response {:error :error/unknown-user})
         (resp/status 401))))
 
@@ -115,3 +126,4 @@
                                        (partial team-stats-api-handler (:conn component)))
                     :tag             :team-stats})
     [:conn]))
+

@@ -7,27 +7,33 @@
     [goog.events :as events]
     cljsjs.react
     [goog.history.EventType :as EventType]
-    [ccdashboard.client.locations :as locations]
+    [ccdashboard.client.global-stats :as global]
     [ccdashboard.client.user-stats :as user-stats])
   (:import [goog.history Html5History EventType]))
 
 (enable-console-print!)
 
-(def routes ["" {"profile/"  {[:consultant ""] :profile}
+(def routes ["" {"person/"  {[:consultant ""] :person}
                  "people"    :people
-                 "locations" :locations}])
+                 "locations" :location
+                 "global"    :global}])
 
-(defmulti handlers :handler :default :profile)
+(defmulti handlers :handler :default :person)
 
-(defmethod handlers :locations [] locations/location-page)
+(defmethod handlers :location [] (fn []
+                                   [:div
+                                    [:p "Detailed View for each Location"]
+                                    [:h3 "Coming Soon..." ]]))
 
-(defmethod handlers :profile [params]
+(defmethod handlers :global [] global/global-page)
+
+(defmethod handlers :person [params]
   (let [{{consultant :consultant} :route-params} params]
     (cond (nil? consultant)
           (domain/change-selected-consultant (:user/identity @domain/app-state))
           (not= consultant (get-in @domain/app-state [:consultant :consultant/selected]))
           (domain/change-selected-consultant consultant)))
-  user-stats/profile-page)
+  user-stats/person-page)
 
 (defn update-page-to-token [token]
   (swap! domain/app-state assoc :page (bidi/match-route routes token)))
@@ -82,12 +88,15 @@
       (if user-signed-in
         [:span#menu
          [:ul
-          [:li.menuitem [:a {:href "/#"
+          [:li.menuitem [:a {:href (str "/#person/" (get-in @domain/app-state [:consultant :consultant/selected]))
                              :on-click toggle-for-show-menu}
-                         "Home"]]
+                         "Person"]]
           [:li.menuitem [:a {:href "/#locations"
-                            :on-click toggle-for-show-menu}
+                             :on-click toggle-for-show-menu}
                          "Locations"]]
+          [:li.menuitem [:a {:href "/#global"
+                            :on-click toggle-for-show-menu}
+                         "Global"]]
           [:li.menuitem [:a {:href "/login"
                              :on-click toggle-for-show-menu}
                          [:i.icon-off.medium-icon]]]]])]
