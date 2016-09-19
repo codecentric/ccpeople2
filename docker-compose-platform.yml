@@ -1,7 +1,14 @@
 version: "2"
+
+networks:
+  ccdashboardplatform_prodnetwork:
+    external: true
+
 services:
   postgres:
     build: postgres
+    networks:
+      - ccdashboardplatform_prodnetwork
     volumes:
       - "/home/ubuntu/data/postgres:/var/lib/postgresql/data"
     environment:
@@ -15,6 +22,8 @@ services:
         LICENSE: ${DATOMIC_LICENSE_KEY}
         DATOMIC_USER: ${DATOMIC_USER}
         DATOMIC_PASSWORD: ${DATOMIC_PASSWORD}
+    networks:
+      - ccdashboardplatform_prodnetwork
     depends_on:
       - postgres
     volumes:
@@ -26,6 +35,8 @@ services:
   app:
     # must match the jobName
     image: ccpeople2
+    networks:
+      - ccdashboardplatform_prodnetwork
     depends_on:
       - datomicdb
     ports:
