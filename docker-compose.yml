@@ -35,6 +35,7 @@ services:
   devapp:
     build:
       context: app
+      dockerfile: Dockerfile-dev
       args:
         DATOMIC_USER: ${DATOMIC_USER}
         DATOMIC_PASSWORD: ${DATOMIC_PASSWORD}

@@ -35,7 +35,6 @@ services:
   devapp:
     build:
       context: app
-      dockerfile: Dockerfile-uberjar
     ports:
       - "35001:35001"
       - "8000:8000"

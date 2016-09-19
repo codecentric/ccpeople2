@@ -1,17 +1,7 @@
-FROM clojure:latest
+FROM java:8
 
-ARG DATOMIC_USER
-ARG DATOMIC_PASSWORD
-ARG CCARTUSER
-ARG CCARTPASS
+ADD target/ccdashboard.jar /pipeline/source/app.jar
 
-VOLUME /usr/src/app
-WORKDIR /usr/src/app
+EXPOSE 8000 35001
 
-COPY project.clj /usr/src/app/
-
-RUN lein deps
-
-EXPOSE 35001 8000 5005
-
-CMD ["lein", "repl", ":headless", ":port", "35001", ":host", "0.0.0.0"]
+CMD java -Dclojure.server.repl="{:port 35001 :address \"0.0.0.0\" :accept clojure.core.server/repl}" -jar /pipeline/source/app.jar
