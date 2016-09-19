@@ -73,7 +73,7 @@
 ;; worklog_id -> entity-id
 
 (defn get-body [uri]
-  (-> @(http/get uri)
+  (-> @(http/get uri {:request-timeout (* 5 60 1000)})
       :body
       bs/to-string))
 

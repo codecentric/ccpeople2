@@ -22,7 +22,8 @@
            (java.io Closeable)
            (java.util.concurrent Executors TimeUnit)
            (java.lang.invoke MethodHandles)
-           (org.slf4j LoggerFactory)))
+           (org.slf4j LoggerFactory)
+           (java.util Date)))
 
 (def logger ^ch.qos.logback.classic.Logger (LoggerFactory/getLogger "ccdashboard.system"))
 
@@ -85,7 +86,7 @@
                                                    t
                                                    "scheduler error: "
                                                    (.getMessage t))
-                                        (def schedex t))))
+                                        (def schedex [(Date.) t]))))
                              10
                              repeat-delay
                              TimeUnit/SECONDS)))
