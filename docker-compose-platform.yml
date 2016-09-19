@@ -2,8 +2,6 @@ version: "2"
 services:
   postgres:
     build: postgres
-    ports:
-      - "5432:5432"
     volumes:
       - "/home/ubuntu/data/postgres:/var/lib/postgresql/data"
     environment:
@@ -19,8 +17,6 @@ services:
         DATOMIC_PASSWORD: ${DATOMIC_PASSWORD}
     depends_on:
       - postgres
-    ports:
-      - "4334:4334"
     volumes:
       - "/home/ubuntu/data/datomic:/data"
     command: -Ddatomic.sqlPassword=${DATOMIC_POSTGRES_PASSWORD} config/transactor.properties
