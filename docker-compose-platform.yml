@@ -15,7 +15,7 @@ services:
       - POSTGRES_PASSWORD
       - DATOMIC_POSTGRES_PASSWORD
     restart: always
-    env_file: /var/lib/docker/volumes/ccdashboardcontinuousdeliverytools_jenkins-home/_data/jobs/ccdashboard-continuous-delivery-tools/workspace/.env
+    env_file: /var/lib/docker/volumes/ccdashboardcontinuousdeliverytools_jenkins-home/_data/jobs/platform-start-container/workspace/.env
   datomicdb:
     build:
       context: transactor
@@ -33,7 +33,7 @@ services:
     environment:
       - DATOMIC_POSTGRES_PASSWORD
     restart: always
-    env_file: /var/lib/docker/volumes/ccdashboardcontinuousdeliverytools_jenkins-home/_data/jobs/ccdashboard-continuous-delivery-tools/workspace/.env
+    env_file: /var/lib/docker/volumes/ccdashboardcontinuousdeliverytools_jenkins-home/_data/jobs/platform-start-container/workspace/.env
 
   app:
     # must match the jobName
@@ -54,5 +54,5 @@ services:
       - JWS_TOKEN_SECRET
       - APP_HOSTNAME
     restart: always
-    env_file: /var/lib/docker/volumes/ccdashboardcontinuousdeliverytools_jenkins-home/_data/jobs/ccdashboard-continuous-delivery-tools/workspace/.env
+    env_file: /var/lib/docker/volumes/ccdashboardcontinuousdeliverytools_jenkins-home/_data/jobs/platform-start-container/workspace/.env
 
