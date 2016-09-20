@@ -15,7 +15,7 @@ services:
       - POSTGRES_PASSWORD
       - DATOMIC_POSTGRES_PASSWORD
     restart: always
-    env_file: ../../platform-start-container/workspace/.env
+ #   env_file: ../../platform-start-container/workspace/.env
   datomicdb:
     build:
       context: transactor
@@ -29,11 +29,11 @@ services:
       - postgres
     volumes:
       - "/home/ubuntu/data/datomic:/data"
-    command: -Ddatomic.sqlPassword=\${DATOMIC_POSTGRES_PASSWORD} config/transactor.properties
+    command: -Ddatomic.sqlPassword=${DATOMIC_POSTGRES_PASSWORD} config/transactor.properties
     environment:
       - DATOMIC_POSTGRES_PASSWORD
     restart: always
-    env_file: ../../platform-start-container/workspace/.env
+#    env_file: ../../platform-start-container/workspace/.env
 
   app:
     # must match the jobName
@@ -46,7 +46,7 @@ services:
       - "35001:35001"
       - "8000:8000"
     environment:
-      - DATOMIC_CONNECT_URL=datomic:sql://people?jdbc:postgresql://postgres:5432/datomic?user=datomic&password=\${DATOMIC_POSTGRES_PASSWORD}
+      - DATOMIC_CONNECT_URL=datomic:sql://people?jdbc:postgresql://postgres:5432/datomic?user=datomic&password=${DATOMIC_POSTGRES_PASSWORD}
       - JIRA_BASE_URL
       - JIRA_TEMPO
       - JIRA_ACCESS_TOKEN
@@ -54,5 +54,5 @@ services:
       - JWS_TOKEN_SECRET
       - APP_HOSTNAME
     restart: always
-    env_file: ../../platform-start-container/workspace/.env
+#    env_file: ../../platform-start-container/workspace/.env
 
