@@ -592,7 +592,7 @@
 (def jira-user-start-date-import (graph/compile-cancelling jira-start-date-import-graph))
 
 (defprotocol Scheduler
-  (schedule [this f repeat-delay] "Schedule f for periodic execution with given repeat-delay in seconds."))
+  (schedule [this f initial-delay repeat-delay] "Schedule f for periodic execution after initial-delay with given repeat-delay in seconds."))
 
 (defn sync-with-jira! [conn jira import-fn]
   (let [import-result (import-fn {:dbval (db conn)
@@ -624,9 +624,18 @@
                       (log/info logger "Starting import:" (.getName (Thread/currentThread)))
                       (sync-with-jira! conn jira-client jira-import)
                       (log/info logger "Finished import:" (.getName (Thread/currentThread))))
+                    5
                     60)
           (schedule scheduler
                     (partial sync-start-dates! conn jira-client)
+                    60
+                    (* 60 60 24))
+          (schedule scheduler
+                    (fn []
+                      (log/info logger "Starting full import:" (.getName (Thread/currentThread)))
+                      (sync-with-jira! conn jira-client jira-full-re-import)
+                      (log/info logger "Finished full import:" (.getName (Thread/currentThread))))
+                    20
                     (* 60 60 24))
           (assoc this :scheduled true)))
     this)

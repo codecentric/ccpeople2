@@ -76,7 +76,7 @@
     (dissoc this :executor))
 
   worklog/Scheduler
-  (schedule [this f repeat-delay]
+  (schedule [this f initial-delay repeat-delay]
     ;; todo handle exception happening in f
     (.scheduleWithFixedDelay (:executor this)
                              (fn [] (try
@@ -87,7 +87,7 @@
                                                    "scheduler error: "
                                                    (.getMessage t))
                                         (def schedex [(Date.) t]))))
-                             10
+                             initial-delay
                              repeat-delay
                              TimeUnit/SECONDS)))
 
