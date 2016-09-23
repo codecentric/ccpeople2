@@ -82,14 +82,17 @@
                     :tag             :auth})
     [:conn]))
 
+(defn get-username [req]
+  (get-in req [:headers "keycloak_username"]))
+
 (defn api-handler [conn req]
   (def apireq req)
-  (if-let [user-id (oauth/get-signed-user-id req)]
+  (if-let [username (get-username req)]
     (if-let [consultant-username (get-in req [:params :consultant])]
       (response (storage/existing-user-data-by-username conn consultant-username))
       ;; the cookie is valid, but the user doesn't exist (anymore), can happen after re-bootstrapping the database
       ;; make the user login again, resulting in a cookie containing the current user-uuid.
-      (if-let [user-data (storage/existing-user-data-for-user conn (UUID/fromString user-id))]
+      (if-let [user-data (storage/existing-user-data-for-own-user conn username)]
         (response user-data)
         (logout-response)))
     (-> (response {:error :error/unknown-user})
@@ -114,7 +117,7 @@
                   :tag     :index}))
 
 (defn team-stats-api-handler [conn req]
-  (if (oauth/get-signed-user-id req)
+  (if (get-username req)
     (response (storage/teams-stats-seq (d/db conn)))
     (-> (response {:error :error/unknown-user})
         (resp/status 401))))

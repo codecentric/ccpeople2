@@ -180,9 +180,9 @@
                                      (remove (matching :worklog/ticket domain/sick-leave-ticket-id))
                                      (into [])))))
 
-(defn existing-user-data-for-user [conn user-id]
+(defn existing-user-data-for-own-user [conn username]
   (let [dbval (db conn)]
-    (some->> (user-id-by-external-user-id dbval user-id)
+    (some->> (entity-id-by-username dbval username)
              (existing-user-data dbval)
              (with-all-users dbval)
              (add-identity))))

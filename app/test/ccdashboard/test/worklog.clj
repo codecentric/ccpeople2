@@ -289,7 +289,7 @@
                                                 {:user/email         bob-email
                                                  :user/display-name  "Bob Baumeister"
                                                  :user/jira-username bob-baumeister})]
-        (def rr (storage/existing-user-data-for-user conn user-id))
+        (def rr (storage/existing-user-data-for-own-user conn user-id))
         (assert-result-matches (:expected-result scenario) rr))
       (finally
         (component/stop sys)))))
