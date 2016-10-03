@@ -1,5 +1,8 @@
 FROM clojure:lein-2.6.1
 
+RUN mkdir /data
+RUN chown 1000:1000 /data
+
 VOLUME /root/.m2
 VOLUME /usr/src/app
 WORKDIR /usr/src/app
